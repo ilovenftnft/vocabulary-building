@@ -1,0 +1,3 @@
+// 自动生成,勿手改:node tools/kb_rank.js 2
+// 课标外的词(第二轮才解锁;第一轮只学课标词+派生+课标成分词组,两轮各按剧情顺序)
+const KB_LATER = new Set(["luxury","charm","apologize","greasy","rickety","bare","hire","flabby","donut","stereotype","fold","roll call","bull","item","acknowledge","recruit","giant","polar","teensy","otter","priority","assignment","dismiss","chief","handle","academy","token","skulk","daylight","simply","jumbo","pop","pal","buddy","cream","joint","goofy","stinker","adorable","crush","reserve","maid","snot","mucus","scoop","trunk","code","violation","attach","backward","attitude","articulate","fella","rare","patronize","paw"]);

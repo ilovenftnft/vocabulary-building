@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZPD 词汇警校</title>
+<style>
+:root{
+  --navy:#1b2a4a; --navy2:#24365e; --card:#2c4270; --line:#3d5585;
+  --carrot:#ff9f3c; --carrot2:#ff7b2e; --green:#4cd97b; --red:#ff6b6b;
+  --gold:#ffd166; --text:#f2f5fb; --dim:#9fb0cf;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--navy);color:var(--text);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh}
+#app{max-width:520px;margin:0 auto;padding:16px 16px 90px}
+.hidden{display:none!important}
+/* 记忆档案室:7天到期迷你柱图 */
+.plan{display:flex;gap:6px;align-items:flex-end;height:92px;margin-top:12px}
+.pcol{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;height:100%}
+.pcol i{width:100%;max-width:34px;border-radius:4px 4px 0 0;background:#7b9ede;min-height:2px}
+.pcol.today i{background:var(--carrot)}
+.pnum{font-size:12px;font-weight:700;color:var(--text)}
+.plab{font-size:11px;color:var(--dim)}
+.pcol.today .plab{color:var(--carrot);font-weight:700}
+.stations{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.stations span{font-size:11px;color:var(--dim);background:var(--navy);border:1px solid var(--line);border-radius:8px;padding:3px 8px}
+.stations b{color:var(--text)}
+button{font-family:inherit;border:none;cursor:pointer;border-radius:14px}
+.btn{display:block;width:100%;padding:16px;font-size:18px;font-weight:700;margin-top:12px;color:#1b2a4a;background:var(--carrot);box-shadow:0 4px 0 var(--carrot2);transition:transform .05s}
+.btn:active{transform:translateY(3px);box-shadow:none}
+.btn.minor{background:var(--card);color:var(--text);box-shadow:0 4px 0 #1e3055}
+.btn.green{background:var(--green);box-shadow:0 4px 0 #2aa957}
+.btn:disabled{opacity:.4;box-shadow:none}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.brand{font-size:15px;font-weight:800;letter-spacing:1px;color:var(--gold)}
+.streak{font-size:14px;color:var(--dim)}
+.panel{background:var(--navy2);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
+.rank-row{display:flex;align-items:center;gap:14px}
+.rank-badge{width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe29a,var(--carrot));display:flex;align-items:center;justify-content:center;font-size:32px;flex:none;box-shadow:0 0 0 4px #3d5585}
+.rank-name{font-size:20px;font-weight:800}
+.rank-sub{font-size:13px;color:var(--dim);margin-top:2px}
+.bar{height:12px;background:#182642;border-radius:6px;overflow:hidden;margin-top:8px;border:1px solid var(--line)}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--carrot),var(--gold));border-radius:6px;transition:width .6s}
+.bar.green>i{background:linear-gradient(90deg,#37c46e,#7dedaa)}
+.small{font-size:13px;color:var(--dim)}
+.task{display:flex;align-items:center;gap:12px;padding:13px 14px;background:var(--card);border-radius:14px;margin-top:10px;border:1px solid var(--line)}
+.task .ico{font-size:26px;flex:none}
+.task .tt{flex:1}
+.task .tt b{font-size:16px;display:block}
+.task .tt span{font-size:12.5px;color:var(--dim)}
+.task .go{padding:9px 16px;background:var(--carrot);color:#1b2a4a;font-weight:800;font-size:14px;border-radius:10px;flex:none}
+.task.done .go{background:var(--green)}
+.task.locked{opacity:.55}
+.task.locked .go{background:#3d5585;color:var(--dim)}
+/* 词卡 */
+.stage{background:var(--navy2);border:1px solid var(--line);border-radius:20px;padding:22px 18px;text-align:center;min-height:340px;display:flex;flex-direction:column;justify-content:center;position:relative}
+.progress-mini{position:absolute;top:14px;left:18px;right:18px;display:flex;gap:4px}
+.progress-mini i{flex:1;height:5px;border-radius:3px;background:#3d5585}
+.progress-mini i.on{background:var(--carrot)}
+.bigword{font-size:40px;font-weight:800;letter-spacing:.5px;word-break:break-word;line-height:1.15}
+.ipa{color:var(--dim);font-size:17px;margin-top:6px}
+.cn-mean{font-size:22px;font-weight:700;margin-top:10px;color:var(--gold)}
+.linebox{background:#182642;border-radius:14px;padding:13px;margin-top:16px;text-align:left}
+.linebox .en{font-size:16.5px;line-height:1.5}
+.linebox .en em{color:var(--carrot);font-style:normal;font-weight:800;border-bottom:2px solid var(--carrot)}
+.linebox .zh{font-size:14px;color:var(--dim);margin-top:6px;line-height:1.5}
+.tstamp{display:inline-block;font-size:12px;color:#1b2a4a;background:var(--gold);border-radius:6px;padding:1px 8px;margin-top:8px;font-weight:700}
+.notebox{background:#33305a;border-radius:12px;padding:11px 13px;margin-top:10px;text-align:left;font-size:13.5px;line-height:1.55;color:#d9d4ff}
+.phchip{display:block;background:#1f4d43;color:#7dedc9;border-radius:12px;padding:11px 13px;margin-top:10px;text-align:left;font-size:13.5px;line-height:1.55;cursor:pointer}
+.speak-btn{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:50%;width:54px;height:54px;font-size:26px;margin:14px auto 0;display:flex;align-items:center;justify-content:center}
+.speak-btn:active{background:var(--line)}
+.soundwave{font-size:64px;animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:.75;transform:scale(1)}50%{opacity:1;transform:scale(1.12)}}
+.choice{display:block;width:100%;padding:14px;margin-top:10px;font-size:17px;font-weight:600;background:var(--card);color:var(--text);border:1px solid var(--line);text-align:left}
+.choice.ok{background:#1f4d33;border-color:var(--green)}
+.choice.bad{background:#54282e;border-color:var(--red)}
+.chunkzone{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px}
+.chunk{padding:10px 16px;font-size:19px;font-weight:700;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:12px}
+.chunk.used{opacity:.25;pointer-events:none}
+.slotline{min-height:46px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:14px}
+.slot{padding:8px 14px;font-size:19px;font-weight:700;background:#1f4d33;border:1px solid var(--green);border-radius:10px;color:#b8f5cf}
+/* 音块配色:同一个词里,不同音块不同颜色(定义在 .chunk/.slot 之后以覆盖其默认色) */
+.hue0{color:#ffb454}.hue1{color:#6fe3ff}.hue2{color:#7dedaa}.hue3{color:#ff9ecd}.hue4{color:#c9b8ff}.hue5{color:#ffe08a}
+.typebox{margin-top:16px;width:100%;padding:14px;font-size:22px;text-align:center;border-radius:14px;border:2px solid var(--line);background:#182642;color:var(--text);outline:none;font-weight:700;letter-spacing:1px}
+.typebox:focus{border-color:var(--carrot)}
+.hint{margin-top:10px;font-size:15px;color:var(--dim);min-height:22px}
+.hint b{color:var(--carrot);letter-spacing:2px}
+.feedback{font-size:20px;font-weight:800;margin-top:14px;min-height:28px}
+.feedback.ok{color:var(--green)} .feedback.bad{color:var(--red)}
+/* 通缉令 */
+.wanted{background:linear-gradient(#f7ead2,#efdfc0);color:#5a3d1e;border-radius:14px;padding:14px;margin-top:12px;text-align:center;border:3px solid #b98a4e}
+.wanted h3{font-size:13px;letter-spacing:5px;color:#a03c2c}
+.wanted .ww{font-size:26px;font-weight:800;margin:4px 0;color:#432c12}
+.wanted .wc{font-size:14px}
+.wanted .esc{font-size:12px;margin-top:5px;color:#a03c2c;font-weight:700}
+/* 词典面板 */
+.dict{background:#182642;border-radius:12px;margin-top:10px;text-align:left;font-size:14px;overflow:hidden}
+.dict-head{padding:10px 13px;color:var(--gold);font-weight:700;cursor:pointer;user-select:none}
+.dict-body{padding:0 13px 12px;line-height:1.6;color:#c9d6ee}
+.dict-body .sense{margin-top:6px}
+.dict-body .sn{color:var(--carrot);font-weight:800;margin-right:4px}
+.dict-body .den{color:#9fb0cf}
+.dict-body .dcn{color:#f2f5fb;font-weight:600}
+.dict-body .dex{margin-top:6px;font-size:13px;color:#8ea3c9;border-left:3px solid #3d5585;padding-left:8px}
+/* 结算/破案 */
+.report{text-align:center;padding:30px 0}
+.report .big{font-size:64px}
+.report h2{font-size:26px;margin-top:10px}
+.report .stats{display:flex;gap:10px;margin-top:20px}
+.report .stat{flex:1;background:var(--card);border-radius:14px;padding:14px;border:1px solid var(--line)}
+.report .stat b{display:block;font-size:28px;color:var(--carrot)}
+.report .stat span{font-size:12.5px;color:var(--dim)}
+.confetti{position:fixed;top:-20px;font-size:22px;animation:drop 2.8s linear forwards;z-index:99;pointer-events:none}
+@keyframes drop{to{transform:translateY(105vh) rotate(720deg);opacity:.2}}
+.back{position:fixed;bottom:0;left:0;right:0;background:rgba(27,42,74,.96);border-top:1px solid var(--line);backdrop-filter:blur(6px);z-index:10}
+.back .inner{max-width:520px;margin:0 auto;display:flex;gap:10px;padding:10px 16px}
+.back button{flex:1;padding:12px;background:none;color:var(--dim);font-size:13px;border-radius:10px}
+.back button.cur{color:var(--carrot);font-weight:800}
+h2.sec{font-size:17px;margin:18px 0 4px;color:var(--gold)}
+/* 电脑大屏:整体等比放大(手机不受影响) */
+@media (min-width:820px){ body{zoom:1.35} }
+@media (min-width:1100px){ body{zoom:1.6} }
+@media (min-width:1500px){ body{zoom:1.9} }
+.wordrow{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card);border-radius:12px;margin-top:8px;border:1px solid var(--line)}
+.wordrow .w{font-weight:800;font-size:16.5px;flex:1}
+.wordrow .m{font-size:13px;color:var(--dim);flex:1.4}
+.wordrow .box{font-size:11.5px;padding:2px 8px;border-radius:6px;background:#3d5585;flex:none}
+.wordrow .box.b3{background:#1f4d33;color:#7dedaa}
+.wordrow .box.wt{background:#a03c2c;color:#ffd9cf}
+.tabs{display:flex;gap:8px;margin-top:12px}
+.tabs button{flex:1;padding:10px;background:var(--card);color:var(--dim);font-size:14px;font-weight:700}
+.tabs button.cur{background:var(--carrot);color:#1b2a4a}
+/* 电影画面:内嵌在台词框下方的槽位里,不遮任何内容 */
+.vidwrap{position:relative;margin-top:10px;background:#000;border-radius:12px;overflow:hidden}
+.vidwrap video{width:100%;display:block;cursor:pointer}
+.vidwrap .vx{position:absolute;top:6px;right:8px;background:rgba(0,0,0,.55);color:#fff;border:0;border-radius:50%;width:30px;height:30px;font-size:15px;cursor:pointer}
+.vidwrap.float{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:99;width:min(94vw,560px);margin:0;box-shadow:0 10px 34px rgba(0,0,0,.6)} /* 页面上找不到槽位时的兜底 */
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="back"><div class="inner">
+  <button id="nav-home" class="cur" onclick="go('home')">🏠 警局大厅</button>
+  <button id="nav-dojo" onclick="go('dojo')">🥋 拼读道场</button>
+  <button id="nav-words" onclick="go('words')">📋 词汇档案</button>
+</div></div>
+<script src="phonics.js"></script>
+<script src="dojo_ch1.js"></script>
+<script>
+/* ===== 章节加载器 =====
+   ?ch=N 优先,其次记住上次学的章;词卡/课标名单/词典/台词/区间按章载入。
+   道场是全局拼读课程,不随章切换。新章数据做好后在 CH_READY 登记。 */
+const CHAPTERS=[
+ {ch:1,title:"兔窝镇 Bunnyburrow",from:"01:01",to:"09:55",desc:"Judy 的童年到警校毕业"},
+ {ch:2,title:"初到动物城 Savanna Central",from:"12:42",to:"22:50",desc:"公寓、警局报到、遇见狐狸尼克"},
+ {ch:3,title:"小鼠镇追捕 Little Rodentia",from:"22:50",to:"30:52",desc:"冰棍骗局真相、小鼠镇大追捕"},
+ {ch:4,title:"水獭失踪案 ZPD",from:"30:52",to:"37:26",desc:"接下失踪案:48小时军令状"},
+ {ch:5,title:"车管所与神秘泉 DMV",from:"37:26",to:"44:14",desc:"神秘泉俱乐部、车管所树懒"},
+ {ch:6,title:"冰川镇教父 Tundratown",from:"44:14",to:"52:39",desc:"豪车线索、Mr. Big 的婚礼"},
+ {ch:7,title:"雨林区追逐 Rainforest",from:"52:39",to:"61:25",desc:"黑豹发狂、缆车上的身世"},
+ {ch:8,title:"悬崖疗养院 Cliffside",from:"61:25",to:"70:09",desc:"天眼查车、疯狂的市长"},
+ {ch:9,title:"发布会风波 Press",from:"70:09",to:"76:01",desc:"发布会说错话、搭档决裂"},
+ {ch:10,title:"重返兔窝镇 Night Howlers",from:"76:01",to:"83:42",desc:"回乡、夜嚎花的真相"},
+ {ch:11,title:"夜嚎者实验室 The Lab",from:"83:42",to:"90:33",desc:"地铁实验室、夺证狂奔"},
+ {ch:12,title:"博物馆决战 Museum",from:"90:33",to:"104:00",desc:"决战、真相大白、毕业演讲"},
+];
+const CH_READY=[1,2,3,4,5,6,7,8,9,10,11,12]; // 已有数据文件的章
+const CNNUM=["","一","二","三","四","五","六","七","八","九","十","十一","十二"];
+const CH_NO=(()=>{const q=new URLSearchParams(location.search).get("ch");
+  let n=parseInt(q||localStorage.getItem("zpd_chapter")||"1",10);
+  if(!CH_READY.includes(n))n=1;
+  localStorage.setItem("zpd_chapter",n);return n;})();
+const CHMETA=CHAPTERS[CH_NO-1];
+document.title=`ZPD 词汇警校 · 第${CNNUM[CH_NO]}章 ${CHMETA.title.split(" ")[0]}`;
+["words","kb","ode","lines","ends"].forEach(p=>document.write(`<script src="${p}_ch${CH_NO}.js"><\/script>`));
+</script>
+<script>
+/* 词卡按台词时间排序:学习顺序永远跟着剧情走(新增卡可追加在数据文件任意位置) */
+WORDS.sort((a,b)=>a.t===b.t?0:(a.t<b.t?-1:1));
+/* ================= 状态存储 ================= */
+const KEY="zpd_v2"; // 全章共用一份存档;旧的 zpd_ch1_v1 存档在 load() 里自动迁移
+const DAY=86400000;
+// 间隔复习计划(天):扩张式间隔提取(SM-2/Leitner 一族的翻倍节奏)。
+// 注意:这不是"艾宾浩斯计划"——艾宾浩斯只测过遗忘速度,没给过复习时间表;
+// 有实验支撑的是间隔效应+提取练习+间隔随保持期扩张(Cepeda 2008),数值本身无神圣性
+const GAPS=[1,2,4,7,15,30];
+const RANKS=[[0,"见习学员","🐇"],[15,"警校学员","🎓"],[40,"巡警","👮"],[80,"警探","🕵️"],[130,"警督","⭐"],[180,"警监","🌟"],[999,"局长","🏆"]];
+let S=load();
+function load(){
+  try{let s=JSON.parse(localStorage.getItem(KEY));
+    if(!s){const old=JSON.parse(localStorage.getItem("zpd_ch1_v1"));if(old&&old.cards)s=old;} // 单章时代旧档
+    if(s&&s.cards){
+    s.dojo=s.dojo||{};
+    if(!Array.isArray(s.dojo.done))s.dojo.done=[...Array(s.dojo.passed||0).keys()]; // 旧存档迁移
+    s.dojo.free=!!s.dojo.free;
+    s.badges=s.badges||{};
+    s.gold=s.gold||{}; // 第二轮(课标外词)金警徽
+    if(!s.avReset2){s.av=0;s.avReset2=true;} // 2026-07-03 区间换成精确对齐,旧的手调偏移一次性归零
+    if(s.caseSolved&&!s.badges[1])s.badges[1]=true; // 旧档的第1章警徽
+    return s;}}catch(e){}
+  return {cards:{},day:today(),streak:0,lastStudy:"",shields:2,firstDone:false,badges:{},gold:{},
+          dojo:{done:[],free:false},session:{newW:0,caught:0,esc:0}};
+}
+function solvedCh(){return !!(S.badges&&S.badges[CH_NO]);}
+function save(){localStorage.setItem(KEY,JSON.stringify(S));}
+function today(){const d=new Date();return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;}
+function card(w){ if(!S.cards[w]) S.cards[w]={box:0,due:0,seen:0,wrong:0,wanted:false,caught:0}; return S.cards[w];}
+function learnedCount(){return Object.values(S.cards).filter(c=>c.seen>0).length;}
+function masteredCount(){return Object.values(S.cards).filter(c=>c.box>=3).length;}
+function wantedList(){return WORDS.filter(x=>card(x.w).wanted);}
+function dueList(){const now=Date.now();return WORDS.filter(x=>{const c=S.cards[x.w];return c&&c.seen>0&&c.due<=now;});}
+/* 两轮制:第一轮 12 章只学课标词(含派生/课标成分词组),集齐 12 枚警徽后开第二轮——
+   从第 1 章重新按章推进课标外词,学满 80% 解锁第二次破案,通过得金警徽,金警徽解锁下一章第二轮。
+   每轮组内都按剧情顺序;词汇档案同样只显示当前已解锁的那部分词 */
+function kbLater(x){return (typeof KB_LATER!=="undefined"&&KB_LATER.has(x.w))?1:0;}
+function goldCh(){return !!(S.gold&&S.gold[CH_NO]);}
+function allBadges(){return CH_READY.every(n=>S.badges&&S.badges[n]);}
+function goldOpen(n){return allBadges()&&(n===1||!!(S.gold&&S.gold[n-1]));} // 第 n 章的第二轮是否已解锁
+function round2(){return goldOpen(CH_NO);}       // 当前章是否处于第二轮
+function roundWords(later){return WORDS.filter(x=>kbLater(x)===later);} // 0=课标词 1=课标外
+function visWords(){return round2()?WORDS:roundWords(0);} // 当前可见/可学的词集
+function newList(){return visWords().filter(x=>!S.cards[x.w]||S.cards[x.w].seen===0).sort((a,b)=>kbLater(a)-kbLater(b));}
+// 未来7天各有多少词到期 + 各曲线站点人数(记忆档案室用)
+function duePlan(){
+  const st=new Date();st.setHours(0,0,0,0);const s0=st.getTime();
+  const days=Array(7).fill(0);let later=0;const boxes=Array(GAPS.length).fill(0);
+  for(const w in S.cards){const c=S.cards[w];if(!c.seen)continue;
+    boxes[Math.min(c.box,GAPS.length-1)]++;
+    const d=Math.floor((c.due-s0)/DAY);
+    if(d<=0)days[0]++;else if(d<7)days[d]++;else later++;}
+  return {days,later,boxes};
+}
+function rankOf(n){let r=RANKS[0];for(const x of RANKS){if(n>=x[0])r=x;}return r;}
+function nextRank(n){for(const x of RANKS){if(n<x[0])return x;}return null;}
+/* 打卡 */
+function markStudy(){
+  const t=today();
+  if(S.lastStudy===t)return;
+  const y=new Date(Date.now()-DAY);
+  const ys=`${y.getFullYear()}-${y.getMonth()+1}-${y.getDate()}`;
+  if(S.lastStudy===ys){S.streak++;}
+  else if(S.lastStudy&&S.shields>0){S.shields--;S.streak++;}
+  else S.streak=1;
+  S.lastStudy=t;save();
+}
+/* ================= 语音 ================= */
+let VOICE=null;
+function voiceScore(v){
+  const n=v.name, prem=/Premium|Enhanced|高级|增强/i.test(n);
+  if(/Ava/i.test(n)) return prem?100:90;
+  if(/Samantha|Allison|Zoe|Evan|Joelle|Nathan|Susan/i.test(n)) return prem?80:60;
+  if(v.lang==="en-US"||v.lang==="en_US") return prem?50:40;
+  return 10;
+}
+function pickVoice(){
+  const vs=speechSynthesis.getVoices().filter(v=>v.lang.replace("_","-").startsWith("en"));
+  VOICE=vs.sort((a,b)=>voiceScore(b)-voiceScore(a))[0]||null;
+}
+speechSynthesis.onvoiceschanged=pickVoice; pickVoice();
+function utter(text,rate){
+  const u=new SpeechSynthesisUtterance(text);
+  if(VOICE)u.voice=VOICE; u.lang="en-US"; u.rate=rate;
+  return u;
+}
+function say(text,rate){
+  try{speechSynthesis.cancel();speechSynthesis.speak(utter(text,rate||0.85));}catch(e){}
+}
+/* 慢读=两遍式:先正常语速,停一拍,再稍慢一遍。
+   超低速(<0.6)是机械拉伸,长元音词(rule)会拖出怪腔,故慢速下限 0.65 */
+function saySlow(text){
+  try{
+    speechSynthesis.cancel();
+    const u=utter(text,0.85);
+    u.onend=()=>setTimeout(()=>speechSynthesis.speak(utter(text,0.65)),350);
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+/* ================= 电影原声 =================
+   根目录放 电影原声.mp3(或 .m4a)即自动启用;没有文件时 🎬 按钮自动退回机器朗读 */
+let MOVIE=null, MOVIE_OK=false, movieTimer=null;
+(function initMovie(){
+  // m4a 优先:mp3 缺精确索引,浏览器远距离跳转会偏;m4a 逐样本定位
+  const cands=["../疯狂动物城.m4a","../疯狂动物城.mp3","../电影原声.m4a","../电影原声.mp3","../zootopia.m4a","../zootopia.mp3"];
+  let i=0;
+  function tryNext(){
+    if(i>=cands.length)return;
+    MOVIE=new Audio(cands[i++]);
+    MOVIE.preload="metadata";
+    MOVIE.onloadedmetadata=()=>{MOVIE_OK=true;};
+    MOVIE.onerror=tryNext;
+  }
+  tryNext();
+})();
+/* 电影画面:根目录 8疯狂动物城.mkv(与 m4a 同时间线);Chrome 可原生播放。
+   有 mkv → 🎬 播画面片段;没有 → 退回纯音频;都没有 → 机器朗读 */
+let VID=null,VID_OK=false,VWRAP=null,VLAST=null;
+(function initVideo(){
+  VID=document.createElement("video");
+  VID.src=encodeURI("../8疯狂动物城.mkv");VID.preload="metadata";VID.playsInline=true;
+  VID.onloadedmetadata=()=>{VID_OK=true;};
+  VID.onclick=()=>{if(VLAST)playClip(VLAST.sec,VLAST.dur,true);}; // 点画面重播
+})();
+function showVid(){
+  if(!VWRAP){
+    VWRAP=document.createElement("div");VWRAP.className="vidwrap";
+    const x=document.createElement("button");x.className="vx";x.textContent="✕";
+    x.onclick=e=>{e.stopPropagation();stopMovie();};
+    VWRAP.appendChild(VID);VWRAP.appendChild(x);
+    VID.ontimeupdate=()=>{if(!VWRAP.isConnected)VID.pause();}; // 换卡/换页把槽位冲掉了就停声
+  }
+  const slot=document.querySelector(".vidslot"); // 台词框下方的内嵌槽位,不遮内容
+  VWRAP.classList.toggle("float",!slot);
+  const home=slot||document.body;
+  if(VWRAP.parentNode!==home){VWRAP.remove();home.appendChild(VWRAP);}
+}
+function hideVid(){if(VID)VID.pause();if(VWRAP&&VWRAP.parentNode)VWRAP.parentNode.removeChild(VWRAP);}
+function stopMovie(){if(MOVIE){MOVIE.pause();}hideVid();CH_PLAYING=false;if(movieTimer){clearTimeout(movieTimer);movieTimer=null;}}
+function playClip(start,dur,vid){ // start 已含提前量和 S.av 校准;vid=true 出画面
+  if(movieTimer){clearTimeout(movieTimer);movieTimer=null;}
+  CH_PLAYING=false;
+  speechSynthesis.cancel();if(MOVIE)MOVIE.pause();if(VID)VID.pause();
+  const useVid=vid&&VID_OK;
+  const m=useVid?VID:(MOVIE_OK?MOVIE:VID); // 只有 mkv 没有 m4a 时:纯听也用视频元素出声,但不显画面
+  if(useVid){VLAST={sec:start,dur};showVid();}else hideVid();
+  m.currentTime=Math.max(0,start);m.play();
+  movieTimer=setTimeout(()=>m.pause(),dur*1000); // 画面播完停在最后一帧,点画面可重播,✕ 关闭
+}
+let CH_PLAYING=false; // 整章连播中(裸听挑战)
+function playChapter(vid){
+  if(!VID_OK&&!MOVIE_OK)return;
+  if(CH_PLAYING&&!vid){stopMovie();return;} // 裸听再点一次=停(画面有✕,不用这招)
+  const p=CHMETA.from.split(":"),q=CHMETA.to.split(":");
+  const s=(+p[0])*60+(+p[1]), e=(+q[0])*60+(+q[1]);
+  playClip(s+(S.av||0),e-s,vid);
+  CH_PLAYING=true;
+}
+function playMovie(t,w,vid){
+  if(!VID_OK&&!MOVIE_OK){ // 没有视频也没有原声文件:退回朗读整句
+    const x=WORDS.find(y=>y.t===t&&y.w===w); if(x)say(x.en,0.8); return;
+  }
+  let sec,end;
+  const span=(typeof CARD_SPAN!=="undefined")?CARD_SPAN[w]:null;
+  if(span){sec=span[0];end=span[1];} // 精确区间(含合并句跨行)
+  else{
+    const p=t.split(":");sec=(+p[0])*60+(+p[1]);end=sec+6;
+    for(const s of LINE_SECS){if(s>sec){end=s;break;}}
+  }
+  const dur=Math.min(Math.max(end-sec+0.2,2),14);
+  playClip(sec-0.35+(S.av||0),dur,vid);
+}
+/* ================= 通用 ================= */
+const app=document.getElementById("app");
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;");}
+function hlLine(en,w){
+  const re=new RegExp("\\b("+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"[a-z]*)\\b","i");
+  return esc(en).replace(re,"<em>$1</em>");
+}
+function lineBox(x){
+  return `<div class="linebox">
+    <div class="en">${hlLine(x.en,x.w.split(" ")[0])} <span style="cursor:pointer" onclick="say('${x.en.replace(/'/g,"\\'")}',0.8)">🔊</span></div>
+    <div class="zh">${x.zh}</div>
+    <span class="tstamp" style="cursor:pointer" onclick="playMovie('${x.t}','${x.w.replace(/'/g,"\\'")}')">🔊 ${x.t} ▶ 原声</span>
+    <span class="tstamp" style="cursor:pointer;margin-left:8px" onclick="playMovie('${x.t}','${x.w.replace(/'/g,"\\'")}',true)">🎬 看画面</span>
+    <div class="vidslot"></div>  </div>`;
+}
+function dictBox(x){
+  const d=ODE[x.w]; if(!d)return "";
+  let senses=d.senses.map((s,i)=>`<div class="sense"><span class="sn">${i+1}</span><span class="den">${esc(s.en)}</span> <span class="dcn">${esc(s.cn||"")}</span></div>`).join("");
+  let ex=d.ex?`<div class="dex">${esc(d.ex.en)}<br>${esc(d.ex.cn||"")}</div>`:"";
+  return `<div class="dict"><div class="dict-head" onclick="this.nextElementSibling.classList.toggle('hidden')">📖 牛津词典 ${d.ipa?"/"+d.ipa+"/(英式)":""} ▾</div><div class="dict-body hidden">${senses}${ex}</div></div>`;
+}
+/* 音块着色:同词内按顺序循环取色;拼装按钮按音块在原词中的位置取色 */
+function ckSpan(txt,i){return `<span class="hue${i%6}">${esc(txt)}</span>`;}
+function chunksHtml(x,sep){return x.ch.map((c,i)=>ckSpan(c,i)).join(sep||" · ");}
+function phSiblings(x){
+  if(!x.ph||!PHONICS_NAMES[x.ph])return "";
+  let rule=PHONICS_NAMES[x.ph];
+  /* 括号里是纯例词(不含读音)才拆出来:串词够用时隐掉,不够时补进串词一起读 */
+  const m=rule.match(/\(([a-zA-Z ·]+)\)$/);
+  const list=WORDS.filter(y=>y.ph===x.ph&&y.w!==x.w).map(y=>y.w).slice(0,4);
+  if(m){
+    rule=rule.slice(0,m.index).trim();
+    if(list.length<2)m[1].split("·").map(s=>s.trim()).forEach(w=>{
+      if(w&&w!==x.w&&list.length<4&&!list.includes(w))list.push(w);
+    });
+  }
+  return `<div class="phchip" onclick="say('${(list.length?list:[x.w]).join(", ")}',0.75)">🔤 ${rule}${list.length?`<div style="margin-top:4px">串词:${list.join("、")} 🔊</div>`:" 🔊"}</div>`;
+}
+function confetti(){
+  for(let i=0;i<26;i++){
+    const e=document.createElement("div");e.className="confetti";
+    e.textContent=["🥕","⭐","🎉","🐰","🎖️"][i%5];
+    e.style.left=Math.random()*100+"vw";e.style.animationDelay=Math.random()*0.9+"s";
+    document.body.appendChild(e);setTimeout(()=>e.remove(),4000);
+  }
+}
+function go(page,arg){
+  document.getElementById("nav-home").className=page==="home"?"cur":"";
+  document.getElementById("nav-dojo").className=page==="dojo"?"cur":"";
+  document.getElementById("nav-words").className=page==="words"?"cur":"";
+  window.scrollTo(0,0);stopMovie();
+  ({home:renderHome,words:renderWords,learn:startLearn,review:startReview,quiz:startQuiz,dojo:renderDojo,map:renderMap}[page])(arg);
+}
+/* ================= 城区地图(选章) ================= */
+function switchCh(n){localStorage.setItem("zpd_chapter",n);location.href=location.pathname+"?ch="+n;}
+function renderMap(){
+  const R2=allBadges(), goldN=Object.values(S.gold||{}).filter(Boolean).length;
+  app.innerHTML=`<div class="topbar"><div class="brand">🗺️ 城区地图</div><div class="streak">🎖️×${Object.values(S.badges||{}).filter(Boolean).length}${R2?` 🥇×${goldN}`:""}</div></div>
+  <div class="small" style="margin:4px 14px 10px">${R2?"第二轮开始!每个城区还有一批扩展词,拿金警徽解锁下一城区":"拿到上一章的警徽,就能进入下一个城区"}</div>
+  ${CHAPTERS.map(c=>{
+    const ready=CH_READY.includes(c.ch);
+    const here=c.ch===CH_NO;
+    // 第一轮:警徽链解锁进入;第二轮:所有章都可进(复习不受限),金警徽链决定第二轮状态
+    const open=R2?true:(c.ch===1||(S.badges&&S.badges[c.ch-1]));
+    const done=R2?!!S.gold[c.ch]:!!(S.badges&&S.badges[c.ch]);
+    const st=!ready?"制作中,敬请期待"
+      :R2?(done?"金警徽到手,可复训":goldOpen(c.ch)?(here?"当前城区":"第二轮:扩展词等你来学"):"可复习 · 第二轮先拿上一章金警徽")
+      :(!open?"先拿到上一章警徽":done?"已拿警徽,可复训":here?"当前城区":"可进入");
+    return `<div class="task ${done?"done":(!ready||!open?"locked":"")}">
+      <div class="ico">${done?(R2?"🥇":"🎖️"):!ready?"🚧":!open?"🔒":R2&&goldOpen(c.ch)?"📍":R2?"🎖️":"📍"}</div>
+      <div class="tt"><b>第${CNNUM[c.ch]}章 · ${c.title}</b><span>${c.from}-${c.to} · ${c.desc}<br>${st}</span></div>
+      ${ready&&open&&!here?`<button class="go" onclick="switchCh(${c.ch})">前往</button>`:here?`<button class="go" onclick="go('home')">返回</button>`:""}
+    </div>`;}).join("")}`;
+}
+/* ================= 大厅 ================= */
+function renderHome(){
+  const gLearned=learnedCount(); // 全书累计,只用于警衔
+  const r=rankOf(gLearned), nr=nextRank(gLearned);
+  const G=round2(), rw=roundWords(G?1:0); // 本轮考核词集:一轮=课标词,二轮=课标外
+  const learned=rw.filter(x=>card(x.w).seen>0).length, total=rw.length;
+  const due=dueList().length, wanted=wantedList().length, news=newList().length;
+  const quizReady=learned>=Math.floor(total*0.8);
+  const solved=G?goldCh():solvedCh();
+  const moviePct=Math.round(learned/total*100);
+  app.innerHTML=`
+  <div class="topbar"><div class="brand">🚓 ZPD 词汇警校</div>
+    <div class="streak">🔥 连续 ${S.streak} 天 &nbsp;🥕×${S.shields}</div></div>
+  <div class="panel">
+    <div class="rank-row">
+      <div class="rank-badge">${r[2]}</div>
+      <div style="flex:1">
+        <div class="rank-name">${r[1]}</div>
+        <div class="rank-sub">${nr?`再学 ${nr[0]-gLearned} 词升为「${nr[1]}」`:"已是最高警衔!"}</div>
+        <div class="bar"><i style="width:${nr?Math.min(100,Math.round(gLearned/nr[0]*100)):100}%"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="panel">
+    <b>📍 第${CNNUM[CH_NO]}章 · ${CHMETA.title}</b>
+    <button class="go" style="float:right;margin-top:-4px" onclick="go('map')">🗺️ 换城区</button>
+    <div class="small" style="margin-top:4px">电影 ${CHMETA.from} → ${CHMETA.to} · ${CHMETA.desc}</div>
+    <div class="bar green"><i style="width:${moviePct}%"></i></div>
+    <div class="small" style="margin-top:6px">${G?"第二轮·本章扩展词已拿下":"这一段台词你已拿下"} <b style="color:var(--green)">${learned} / ${total}</b> 词(${moviePct}%)</div>
+  </div>
+  <div class="task ${news===0?"done":""}">
+    <div class="ico">🆕</div>
+    <div class="tt"><b>认识新市民</b><span>还有 ${news} 个新词等着你 · 每次 10 个</span></div>
+    <button class="go" onclick="go('learn')" ${news===0?"disabled":""}>${news===0?"完成":"开始"}</button>
+  </div>
+  <div class="task ${wanted===0&&due===0?"done":""}">
+    <div class="ico">🚨</div>
+    <div class="tt"><b>抓捕逃犯</b><span>通缉榜 ${wanted} 个 · 到期复习 ${due} 个</span></div>
+    <button class="go" onclick="go('review')" ${wanted===0&&due===0?"disabled":""}>${wanted===0&&due===0?"无案":"出警"}</button>
+  </div>
+  <div class="task ${S.dojo.done.length>=DOJO.length?"done":""}">
+    <div class="ico">🥋</div>
+    <div class="tt"><b>拼读道场</b><span>${S.dojo.done.length>=DOJO.length?"7 关全通!已练成拼读功夫":`按体系练拼读 · 已通 ${S.dojo.done.length}/${DOJO.length} 关 · 每天一关`}</span></div>
+    <button class="go" onclick="go('dojo')">${S.dojo.done.length===0?"入门":"进入"}</button>
+  </div>
+  <div class="task ${quizReady?(solved?"done":""):"locked"}">
+    <div class="ico">🕵️</div>
+    <div class="tt"><b>${G?"第二轮破案":"章末破案"}:${CHMETA.title.split(" ")[0]}疑云</b><span>${quizReady?(solved?`已${G?"获金警徽":"破案"}!可再挑战`:`已解锁!通过即得${G?"金":""}警徽`):`学满 ${Math.floor(total*0.8)} 词解锁(还差 ${Math.floor(total*0.8)-learned})`}</span></div>
+    <button class="go" onclick="go('quiz')" ${quizReady?"":"disabled"}>${solved?"重玩":"破案"}</button>
+  </div>
+  ${planPanel()}
+  ${wanted>0?`<h2 class="sec">🚨 通缉榜(答错的词在这里等你抓)</h2>`+wantedList().slice(0,3).map(x=>
+    `<div class="wanted"><h3>W A N T E D</h3><div class="ww">${x.w}</div><div class="wc">${x.cn}</div><div class="esc">已逃脱 ${card(x.w).wrong} 次 · 连抓 ${card(x.w).caught}/2 次归案</div></div>`).join("")+
+    (wanted>3?`<div class="small" style="text-align:center;margin-top:8px">…还有 ${wanted-3} 名逃犯</div>`:""):""}
+  ${solvedCh()?`<div class="panel" style="text-align:center;margin-top:14px">${goldCh()?"🥇":"🎖️"} <b>${CHMETA.title.split(" ")[0]}${goldCh()?"金警徽":"警徽"}</b> 已获得!<div class="small">裸听挑战:重放电影 ${CHMETA.from}-${CHMETA.to},看你能听懂多少!</div>
+    <div style="margin-top:8px"><span class="tstamp" style="cursor:pointer" onclick="playChapter()">🔊 裸听本章(再点一次停)</span>
+    <span class="tstamp" style="cursor:pointer;margin-left:8px" onclick="playChapter(true)">🎬 带画面看</span></div>
+    <div class="vidslot"></div></div>`:""}
+  ${QP.has("debug")?`<div class="small" style="text-align:center;margin-top:16px">🎛 原声对齐(换音源时校准用):
+    <b style="cursor:pointer;color:var(--carrot)" onclick="avAdj(-0.5)">◀ 提前0.5s</b>
+    <span style="color:var(--gold)"> ${(S.av||0).toFixed(1)}s </span>
+    <b style="cursor:pointer;color:var(--carrot)" onclick="avAdj(0.5)">延后0.5s ▶</b> ·
+    <b style="cursor:pointer;color:var(--green)" onclick="playMovie('${rw[0].t}','${rw[0].w}')">▶ 试听测试句</b>
+    <div style="margin-top:4px;color:#5f7196">测试句应含 "${rw[0].w}"(本章开头的台词,英文见词卡)</div>
+  </div>`:""}
+  <div class="small" style="text-align:center;margin-top:16px;color:#5f7196">
+    <span style="cursor:pointer" onclick="exportSave()">📦 导出存档</span> ·
+    <span style="cursor:pointer" onclick="importSave()">📥 导入存档</span> ·
+    <span style="cursor:pointer" onclick="resetAll()">🗑 重置存档</span>
+  </div>`;
+}
+function resetAll(){
+  const t=prompt('⚠️ 将清空全部学习进度(词卡、警衔、打卡、道场),不可恢复!\n确认请输入:重置');
+  if(t==="重置"){localStorage.removeItem(KEY);location.href=location.pathname;}
+}
+/* 存档随文件走:换电脑/备份用。导出=下载 JSON;导入=读文件覆盖本机进度 */
+function exportSave(){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:"application/json"}));
+  a.download=`ZPD存档_${today()}.json`;a.click();
+}
+function importSave(){
+  const f=document.createElement("input");f.type="file";f.accept=".json,application/json";
+  f.onchange=()=>{const r=new FileReader();
+    r.onload=()=>{try{
+      const s=JSON.parse(r.result);
+      if(!s||typeof s.cards!=="object")throw 0;
+      if(!confirm(`该存档:已学 ${Object.values(s.cards).filter(c=>c.seen>0).length} 词、连续 ${s.streak||0} 天。\n导入会覆盖这台电脑上的现有进度,确定?`))return;
+      localStorage.setItem(KEY,JSON.stringify(s));location.href=location.pathname;
+    }catch(e){alert("这不是有效的 ZPD 存档文件");}};
+    r.readAsText(f.files[0]);};
+  f.click();
+}
+function avAdj(d){S.av=Math.round((((S.av||0)+d))*10)/10;save();renderHome();
+}
+/* 记忆档案室:大脑快忘时档案到期——把 box/due 数据画给人看 */
+function planPanel(){
+  const {days,later,boxes}=duePlan();
+  if(!Object.values(S.cards).some(c=>c.seen>0))return "";
+  const wd=["周日","周一","周二","周三","周四","周五","周六"];
+  const labs=days.map((_,i)=>{
+    if(i===0)return "今天";if(i===1)return "明天";if(i===2)return "后天";
+    return wd[new Date(Date.now()+i*DAY).getDay()];});
+  const max=Math.max(...days,1);
+  const cols=days.map((n,i)=>`<div class="pcol ${i===0?"today":""}">
+    <span class="pnum">${n||""}</span><i style="height:${n?Math.max(6,Math.round(n/max*52)):2}px"></i><span class="plab">${labs[i]}</span></div>`).join("");
+  const stNames=["1天","2天","4天","7天","15天","30天"];
+  const st=boxes.map((n,i)=>n?`<span>第${i+1}站·隔${stNames[i]} <b>×${n}</b></span>`:"").join("")+(later?`<span>7天后再见 <b>×${later}</b></span>`:"");
+  return `<div class="panel">
+    <b>🧠 记忆档案室</b>
+    <div class="small" style="margin-top:4px">大脑在快忘掉的前一刻被提醒,记得最牢。逃犯档案的到期日,就是按你的遗忘曲线排的班:</div>
+    <div class="plan">${cols}</div>
+    <div class="stations">${st}</div>
+    <div class="small" style="margin-top:8px;color:#5f7196">每答对一次,这个词就跳到更远的一站(1→2→4→7→15→30天);答错则退站、半天内重考。今天偷懒,明天的柱子就会变高哦。</div>
+  </div>`;
+}
+/* ================= 学新词 ================= */
+let L={list:[],i:0,phase:0};
+function startLearn(){
+  const news=newList();
+  if(!news.length){go("home");return;}
+  L={list:news.slice(0,10),i:0,phase:0};
+  S.session={newW:0,caught:0,esc:0};
+  renderLearn();
+}
+function renderLearn(){
+  if(L.i>=L.list.length){markStudy();sessionReport("new");return;}
+  const x=L.list[L.i];
+  const dots=L.list.map((_,k)=>`<i class="${k<L.i?"on":""}"></i>`).join("");
+  if(L.phase===0){ // 声音先行:先听,想意思
+    app.innerHTML=`<div class="stage"><div class="progress-mini">${dots}</div>
+      <div class="soundwave">🔊</div>
+      <div class="small" style="margin-top:14px">听!这个${x.type==="chunk"?"短语":"单词"}是什么意思?<br>先自己想,想不出再看答案</div>
+      <button class="speak-btn" onclick="say('${x.w}',0.75)">🔁</button>
+      <button class="btn" onclick="L.phase=1;renderLearn()">看答案</button>
+    </div>`;
+    setTimeout(()=>say(x.w,0.75),300);
+  }else{
+    app.innerHTML=`<div class="stage"><div class="progress-mini">${dots}</div>
+      ${cardBody(x)}
+      <button class="btn green" onclick="say('${x.en.replace(/'/g,"\\'")}',0.8)">🎤 跟读这句台词</button>
+      <button class="btn" onclick="learnNext()">下一个 →</button>
+    </div>`;
+    say(x.w,0.75);
+  }
+}
+/* 完整词卡内容(学新词、档案详情共用) */
+function cardBody(x){
+  return `<div class="bigword">${x.w}</div>
+      ${x.ipa?`<div class="ipa">/${x.ipa}/</div>`:""}
+      <div class="cn-mean">${x.cn}</div>
+      ${x.type!=="chunk"?`<div class="small" style="margin-top:8px">音块:${chunksHtml(x)} <span style="cursor:pointer" onclick="saySlow('${x.w.replace(/'/g,"\\'")}')">🔊慢读</span></div>`:""}
+      ${lineBox(x)}
+      ${x.note?`<div class="notebox">💡 ${x.note}</div>`:""}
+      ${phSiblings(x)}
+      ${dictBox(x)}`;
+}
+/* 档案页点词 → 词卡详情(随时回看讲解) */
+function showWord(w){
+  const x=WORDS.find(y=>y.w===w); if(!x){go("words");return;}
+  window.scrollTo(0,0);stopMovie();
+  app.innerHTML=`<div class="stage">
+    ${cardBody(x)}
+    <button class="btn green" onclick="say('${x.en.replace(/'/g,"\\'")}',0.8)">🎤 跟读台词</button>
+    <button class="btn minor" onclick="go('words')">← 返回词汇档案</button>
+  </div>`;
+  say(x.w,0.75);
+}
+function learnNext(){
+  const x=L.list[L.i];
+  const c=card(x.w);
+  c.seen=1;c.box=0;c.due=Date.now()+GAPS[0]*DAY;
+  S.session.newW++;save();
+  L.i++;L.phase=0;renderLearn();
+}
+/* ================= 复习 / 抓捕(拼写三台阶) ================= */
+let R={list:[],i:0,tryn:0};
+function startReview(){
+  const now=Date.now();
+  const list=[...wantedList(),...dueList().filter(x=>!card(x.w).wanted)];
+  const uniq=[...new Map(list.map(x=>[x.w,x])).values()];
+  if(!uniq.length){go("home");return;}
+  R={list:uniq.slice(0,15).sort(()=>Math.random()-.5),i:0,tryn:0};
+  S.session={newW:0,caught:0,esc:0};
+  renderReview();
+}
+function ladderOf(x){ // 0选择 1音块拼装 2全拼
+  const b=card(x.w).box;
+  if(x.type==="chunk")return b<2?0:1;
+  return b<=0?0:(b<=2?1:2);
+}
+function renderReview(){
+  if(R.i>=R.list.length){markStudy();sessionReport("review");return;}
+  const x=R.list[R.i]; R.tryn=0;
+  const isWanted=card(x.w).wanted;
+  const dots=R.list.map((_,k)=>`<i class="${k<R.i?"on":""}"></i>`).join("");
+  const head=isWanted?`<div class="small" style="color:#ff9f3c">🚨 通缉犯出现!连抓2次才归案(${card(x.w).caught}/2)</div>`:`<div class="small">📋 例行复习</div>`;
+  const lad=ladderOf(x);
+  let body="";
+  if(lad===0){ // 台阶1:听音+看中文 → 四选一
+    const opts=[x.w,...shuffle(WORDS.filter(y=>y.w!==x.w&&(y.type==="chunk")===(x.type==="chunk")).map(y=>y.w)).slice(0,3)];
+    body=`<div class="cn-mean">${x.cn}</div><div class="small" style="margin-top:6px">哪个是它?👂 <span style="cursor:pointer" onclick="say('${x.w}',0.75)">🔊 再听一遍</span></div>
+      ${shuffle(opts).map(o=>`<button class="choice" onclick="pickChoice(this,'${o.replace(/'/g,"\\'")}')">${o}</button>`).join("")}`;
+    setTimeout(()=>say(x.w,0.75),300);
+  }else if(lad===1){ // 台阶2:音块拼装
+    R.pool=shuffle([...x.ch]); R.picked=[];
+    body=`<div class="cn-mean">${x.cn}</div><div class="small" style="margin-top:6px">👂 <span style="cursor:pointer" onclick="say('${x.w}',0.7)">🔊</span> 按声音顺序点音块,拼出它</div>
+      <div class="slotline" id="slots"></div>
+      <div class="chunkzone" id="pool">${R.pool.map((c,i)=>`<button class="chunk hue${x.ch.indexOf(c)%6}" id="ck${i}" onclick="pickChunk(${i})">${c}</button>`).join("")}</div>
+      <div class="feedback" id="fb"></div>`;
+    setTimeout(()=>say(x.w,0.7),300);
+  }else{ // 台阶3:全拼(听写)
+    body=`<div class="cn-mean">${x.cn}</div><div class="small" style="margin-top:6px">👂 <span style="cursor:pointer" onclick="say('${x.w}',0.7)">🔊 听音</span> 直接把它打出来!</div>
+      <input class="typebox" id="tb" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="输入单词" onkeydown="if(event.key==='Enter')checkType()">
+      <div class="hint" id="hint"></div>
+      <button class="btn" onclick="checkType()">抓捕!</button>
+      <div class="feedback" id="fb"></div>`;
+    setTimeout(()=>{say(x.w,0.7);const tb=document.getElementById("tb");if(tb)tb.focus();},300);
+  }
+  app.innerHTML=`<div class="stage"><div class="progress-mini">${dots}</div>${head}${body}</div>`;
+}
+function shuffle(a){return a.sort(()=>Math.random()-.5);}
+function pickChoice(el,o){
+  const x=R.list[R.i];
+  if(o===x.w){el.classList.add("ok");say(x.w,0.8);setTimeout(()=>hit(true),650);}
+  else{el.classList.add("bad");R.tryn++;setTimeout(()=>hit(false),650);}
+}
+function pickChunk(i){
+  const x=R.list[R.i];
+  const c=R.pool[i];
+  const want=x.ch[R.picked.length];
+  if(c===want){
+    R.picked.push(c);document.getElementById("ck"+i).classList.add("used");
+    document.getElementById("slots").innerHTML=R.picked.map((p,k)=>`<span class="slot hue${k%6}">${p}</span>`).join("");
+    if(R.picked.length===x.ch.length){say(x.w,0.8);document.getElementById("fb").className="feedback ok";document.getElementById("fb").textContent="✅ 拼对了!";setTimeout(()=>hit(true),750);}
+  }else{
+    R.tryn++;
+    const fb=document.getElementById("fb");fb.className="feedback bad";fb.textContent=`❌ 下一块是:${want}(听慢读)`;saySlow(x.w);
+    if(R.tryn>=3){setTimeout(()=>hit(false),600);}
+  }
+}
+function checkType(){
+  const x=R.list[R.i];
+  const v=(document.getElementById("tb").value||"").trim().toLowerCase();
+  if(v===x.w.toLowerCase()){
+    document.getElementById("fb").className="feedback ok";document.getElementById("fb").textContent="✅ 归案!";say(x.w,0.8);
+    setTimeout(()=>hit(true),750);
+  }else{
+    R.tryn++;
+    const hint=document.getElementById("hint");
+    if(R.tryn===1){hint.innerHTML=`提示 · 音块:<b>${x.ch.map((c,i)=>i===0?ckSpan(c,0):"·".repeat(c.length)).join(" ")}</b>`;saySlow(x.w);}
+    else if(R.tryn===2){hint.innerHTML=`提示 · 音块:<b>${chunksHtml(x," ")}</b>`;say(x.w,0.4);}
+    else{hit(false);return;}
+    const fb=document.getElementById("fb");fb.className="feedback bad";fb.textContent="还差一点,听提示再试!";
+    document.getElementById("tb").select();
+  }
+}
+function hit(ok){
+  const x=R.list[R.i];const c=card(x.w);c.seen++;
+  if(ok&&R.tryn===0){
+    if(c.wanted){c.caught++;if(c.caught>=2){c.wanted=false;c.caught=0;}}
+    c.box=Math.min(c.box+1,GAPS.length-1);
+    c.due=Date.now()+GAPS[c.box]*DAY;
+    S.session.caught++;
+  }else if(ok){ // 提示后答对:不升级,明天再见
+    c.due=Date.now()+1*DAY; if(c.wanted)c.caught=0;
+    S.session.caught++;
+  }else{
+    c.wrong++;c.wanted=true;c.caught=0;c.box=Math.max(0,c.box-1);
+    c.due=Date.now()+0.5*DAY;
+    S.session.esc++;
+    // 逃跑动画页
+    app.innerHTML=`<div class="stage"><div class="wanted"><h3>W A N T E D</h3><div class="ww">${x.w}</div><div class="wc">${x.ipa?"/"+x.ipa+"/ ":""}${x.cn}</div><div class="esc">💨 逃犯逃跑了!它进了通缉榜,改天再抓</div></div>
+      ${lineBox(x)}${x.type!=="chunk"?`<div class="small" style="margin-top:8px">音块:${chunksHtml(x)} <span style="cursor:pointer" onclick="saySlow('${x.w.replace(/'/g,"\\'")}')">🔊慢读</span></div>`:""}
+      <button class="btn" onclick="say('${x.w}',0.7)">🔊 再听一遍记住它</button>
+      <button class="btn minor" onclick="R.i++;save();renderReview()">继续 →</button></div>`;
+    say(x.w,0.7);save();return;
+  }
+  save();R.i++;renderReview();
+}
+/* ================= 章末破案 ================= */
+let Q={qs:[],i:0,score:0};
+function startQuiz(){
+  // 题目池按当前轮:第一轮出课标词,第二轮出课标外词
+  const learned=roundWords(round2()?1:0).filter(x=>card(x.w).seen>0&&x.type!=="chunk");
+  const pick=shuffle([...learned]).slice(0,10);
+  Q={qs:pick,i:0,score:0};
+  renderQuiz();
+}
+function renderQuiz(){
+  if(Q.i>=Q.qs.length){
+    const pass=Q.score>=8, G=round2(); // 先判轮次再发徽:第二轮通过发金警徽
+    if(pass){if(G)S.gold[CH_NO]=true;else S.badges[CH_NO]=true;save();confetti();}
+    app.innerHTML=`<div class="report"><div class="big">${pass?(G?"🥇":"🎖️"):"🕵️"}</div>
+      <h2>${pass?"案件告破!":"线索还不够"}</h2>
+      <div class="small" style="margin-top:8px">${Q.score} / ${Q.qs.length} 条线索破译${pass?` · 获得「${CHMETA.title.split(" ")[0]}${G?"金警徽":"警徽"}」!`:" · 需要 8 条,先去抓逃犯再来!"}</div>
+      ${pass?`<div class="panel" style="margin-top:20px;text-align:left"><b>🎧 终极裸听挑战</b><div class="small" style="margin-top:6px">现在重放电影 ${CHMETA.from} - ${CHMETA.to},不看字幕。那些台词,现在是不是一句句都清楚了?这是你真正的战利品。</div>
+      <div style="margin-top:8px"><span class="tstamp" style="cursor:pointer" onclick="playChapter()">🔊 裸听本章(再点一次停)</span>
+      <span class="tstamp" style="cursor:pointer;margin-left:8px" onclick="playChapter(true)">🎬 带画面看</span></div>
+      <div class="vidslot"></div></div>`:""}
+      <button class="btn" onclick="go('home')">回警局</button></div>`;
+    return;
+  }
+  const x=Q.qs[Q.i];
+  const mode=Q.i%2; // 交替:0=台词填空(看句) 1=听音写词(拼读神探)
+  let prompt;
+  if(mode===0){
+    const re=new RegExp("\\b"+x.w+"[a-z]*\\b","i");
+    const m=x.en.match(re);
+    const blanked=esc(x.en).replace(m?m[0]:x.w,"＿".repeat(Math.max(3,x.w.length)));
+    prompt=`<div class="small">🔍 线索 ${Q.i+1}/${Q.qs.length} · 补全这句台词(${x.cn})</div>
+      <div class="linebox"><div class="en">${blanked}</div><div class="zh">${x.zh}</div></div>`;
+  }else{
+    prompt=`<div class="small">🔍 线索 ${Q.i+1}/${Q.qs.length} · 拼读神探:只听声音,写出这个词</div>
+      <div class="soundwave" style="margin-top:14px">🔊</div>
+      <button class="speak-btn" onclick="say('${x.w}',0.7)">🔁</button>`;
+    setTimeout(()=>say(x.w,0.7),350);
+  }
+  app.innerHTML=`<div class="stage">${prompt}
+    <input class="typebox" id="qb" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="输入答案" onkeydown="if(event.key==='Enter')checkQuiz()">
+    <button class="btn" onclick="checkQuiz()">提交线索</button>
+    <div class="feedback" id="fb"></div></div>`;
+  setTimeout(()=>{const b=document.getElementById("qb");if(b)b.focus();},200);
+}
+function checkQuiz(){
+  const x=Q.qs[Q.i];
+  const v=(document.getElementById("qb").value||"").trim().toLowerCase();
+  const base=x.w.toLowerCase();
+  const ok=v===base||(v.startsWith(base)&&v.length-base.length<=3&&x.en.toLowerCase().includes(v));
+  const fb=document.getElementById("fb");
+  if(ok){Q.score++;fb.className="feedback ok";fb.textContent="✅ 线索破译!";say(x.w,0.8);}
+  else{fb.className="feedback bad";fb.textContent=`❌ 正确答案:${x.w}`;const c=card(x.w);c.wanted=true;c.caught=0;save();}
+  setTimeout(()=>{Q.i++;renderQuiz();},900);
+}
+/* ================= 拼读道场 ================= */
+let D={lv:0,step:0,i:0,tryn:0,score:0,revealed:false};
+function dojoFrontier(){let f=0;while(S.dojo.done.includes(f))f++;return f;} // 顺序模式解锁到第几关
+function toggleDojoFree(){S.dojo.free=!S.dojo.free;save();renderDojo();}
+function hlPat(w,re){
+  if(!re)return esc(w);
+  try{return esc(w).replace(new RegExp(re,"gi"),m=>`<b style="color:var(--carrot)">${m}</b>`);}catch(e){return esc(w);}
+}
+function renderDojo(){
+  const done=S.dojo.done, free=S.dojo.free, front=dojoFrontier();
+  app.innerHTML=`
+  <div class="topbar"><div class="brand">🥋 拼读道场</div><div class="streak">已通 ${done.length}/${DOJO.length} 关</div></div>
+  <div class="panel"><div class="small">词汇课跟着电影剧情走,道场按<b style="color:var(--gold)">由易到难的体系</b>走。每关:听串词悟规律 → 拼熟词 → <b style="color:var(--gold)">生词考验</b>——没学过的词也能拼出来,才算真功夫。建议每天一关。</div></div>
+  <div class="task">
+    <div class="ico">${free?"🔓":"🔒"}</div>
+    <div class="tt"><b>自由模式</b><span>${free?"已开启:任意关卡随便进":"关闭中:按顺序逐关解锁(推荐)"}</span></div>
+    <button class="go" style="${free?"background:var(--green)":""}" onclick="toggleDojoFree()">${free?"开":"关"}</button>
+  </div>
+  ${DOJO.map((L,i)=>{
+    const isDone=done.includes(i);
+    const open=free||i<=front;
+    return `<div class="task ${isDone?"done":(open?"":"locked")}">
+      <div class="ico">${isDone?"✅":L.icon}</div>
+      <div class="tt"><b>${L.name} · ${L.tag}</b><span>${L.desc}</span></div>
+      <button class="go" onclick="startDojoLv(${i})" ${open?"":"disabled"}>${isDone?"复练":(open?"挑战":"🔒")}</button>
+    </div>`;}).join("")}`;
+}
+function startDojoLv(i){D={lv:i,step:0,i:0,tryn:0,score:0,revealed:false};renderDojoStep();}
+function dojoCard(w){return WORDS.find(x=>x.w===w)||{w:w,cn:"",ch:[w]};}
+function renderDojoStep(){
+  const L=DOJO[D.lv];
+  if(D.step===0){ // 听与悟
+    app.innerHTML=`<div class="stage">
+      <div class="small">${L.icon} 第 ${D.lv+1} 关 · ${L.name} · 第一步:听</div>
+      <div class="cn-mean" style="margin-top:8px">先听,自己找规律</div>
+      <div class="small" style="margin-top:6px">点单词逐个听,注意${L.hl?"橙色部分":"每个音块"}的发音是不是一个模子</div>
+      <div class="chunkzone" style="margin-top:14px">${L.listen.map(w=>{
+        const c=dojoCard(w);
+        const disp=L.hl?hlPat(w,L.hl):chunksHtml(c,"");
+        return `<button class="chunk" style="font-size:17px" onclick="say('${w}',0.7)">${disp}</button>`;}).join("")}</div>
+      <button class="btn minor" onclick="say('${L.listen.join(", ")}',0.72)">🔊 连读一遍</button>
+      ${D.revealed?`<div class="notebox" style="margin-top:14px">📜 <b>规律:</b>${L.rule}</div>
+      <button class="btn" onclick="D.step=1;D.i=0;D.tryn=0;renderDojoStep()">开始练拼写 →</button>`
+      :`<button class="btn" onclick="D.revealed=true;renderDojoStep()">我悟出规律了,对答案!</button>`}
+    </div>`;
+    if(!D.revealed)setTimeout(()=>say(L.listen.slice(0,5).join(", "),0.72),400);
+  }else if(D.step===1){ // 练拼写(词库熟词,不限次数,有音块提示)
+    if(D.i>=L.practice.length){D.step=2;D.i=0;D.tryn=0;renderDojoStep();return;}
+    const x=dojoCard(L.practice[D.i]);
+    app.innerHTML=`<div class="stage">
+      <div class="small">${L.icon} 第二步:练 · ${D.i+1}/${L.practice.length}(熟词热身,错了看提示)</div>
+      <div class="cn-mean">${x.cn}</div>
+      <div class="small" style="margin-top:6px">👂 <span style="cursor:pointer" onclick="say('${x.w}',0.7)">🔊 听音</span>,用这一关的规律拼出来</div>
+      <input class="typebox" id="db" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')dojoCheck(false)">
+      <div class="hint" id="hint"></div>
+      <button class="btn" onclick="dojoCheck(false)">确定</button>
+      <div class="feedback" id="fb"></div></div>`;
+    setTimeout(()=>{say(x.w,0.7);const b=document.getElementById("db");if(b)b.focus();},300);
+  }else{ // 生词考验
+    if(D.i>=L.transfer.length){dojoResult();return;}
+    const x=L.transfer[D.i];
+    app.innerHTML=`<div class="stage">
+      <div class="small" style="color:var(--gold)">${L.icon} 第三步:生词考验 · ${D.i+1}/${L.transfer.length}(这个词你没学过——全靠规律!)</div>
+      <div class="cn-mean">${x.cn}</div>
+      <div class="soundwave" style="margin-top:10px;font-size:44px">🔊</div>
+      <button class="speak-btn" onclick="say('${x.w}',0.65)">🔁</button>
+      <input class="typebox" id="db" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')dojoCheck(true)">
+      <button class="btn" onclick="dojoCheck(true)">出招!</button>
+      <div class="feedback" id="fb"></div></div>`;
+    setTimeout(()=>{say(x.w,0.65);const b=document.getElementById("db");if(b)b.focus();},300);
+  }
+}
+function dojoCheck(isTest){
+  const L=DOJO[D.lv];
+  const x=isTest?L.transfer[D.i]:dojoCard(L.practice[D.i]);
+  const v=(document.getElementById("db").value||"").trim().toLowerCase();
+  const fb=document.getElementById("fb");
+  if(v===x.w.toLowerCase()){
+    fb.className="feedback ok";fb.textContent=isTest?"⚡ 漂亮!没学过也拼对了!":"✅ 对!";
+    say(x.w,0.8);if(isTest)D.score++;
+    setTimeout(()=>{D.i++;D.tryn=0;renderDojoStep();},800);
+  }else if(isTest){
+    fb.className="feedback bad";fb.textContent=`✗ 它是:${x.w}(${x.ch.join("·")})`;
+    setTimeout(()=>{D.i++;renderDojoStep();},1600);
+  }else{
+    D.tryn++;
+    if(D.tryn===1){document.getElementById("hint").innerHTML=`提示 · 音块:<b>${chunksHtml(x," ")}</b>`;saySlow(x.w);fb.className="feedback bad";fb.textContent="再试一次,照音块拼!";document.getElementById("db").select();}
+    else{fb.className="feedback bad";fb.textContent=`答案:${x.w},照着打一遍就过`;document.getElementById("db").select();D.tryn=0;}
+  }
+}
+function dojoResult(){
+  const L=DOJO[D.lv];
+  const pass=D.score>=2;
+  if(pass&&!S.dojo.done.includes(D.lv)){S.dojo.done.push(D.lv);markStudy();save();}
+  if(pass)confetti();
+  app.innerHTML=`<div class="report"><div class="big">${pass?"🥋":"💪"}</div>
+    <h2>${pass?`第 ${D.lv+1} 关 · 通过!`:"差一点点"}</h2>
+    <div class="small" style="margin-top:8px">生词考验 ${D.score}/${L.transfer.length}${pass?" · 这些词你从没背过,是规律帮你拼出来的——这就是自然拼读!":" · 需要拼对 2 个。回去再听一轮串词,规律会更清楚"}</div>
+    ${pass&&S.dojo.done.length>=DOJO.length?`<div class="panel" style="margin-top:16px">🏆 <b>七关全通!</b><div class="small">你已经掌握自然拼读的全套地基。以后每个新词,先猜拼写再验证,功夫越用越深。</div></div>`:""}
+    ${pass?`<button class="btn" onclick="go('dojo')">回道场</button>`:`<button class="btn" onclick="startDojoLv(${D.lv})">再战这关</button><button class="btn minor" onclick="go('dojo')">回道场</button>`}
+  </div>`;
+}
+/* ================= 战报 ================= */
+function sessionReport(kind){
+  const s=S.session;
+  confetti();
+  app.innerHTML=`<div class="report"><div class="big">📋</div><h2>今日战报</h2>
+    <div class="stats">
+      <div class="stat"><b>${s.newW}</b><span>新市民认识</span></div>
+      <div class="stat"><b>${s.caught}</b><span>逃犯抓获</span></div>
+      <div class="stat"><b>${s.esc}</b><span>逃脱在逃</span></div>
+    </div>
+    <div class="panel" style="margin-top:16px;text-align:left"><b>🌙 睡前小任务</b><div class="small" style="margin-top:4px">今晚睡觉前,把今天的词再听一遍(词汇档案页每个词都能点🔊)——睡眠会帮你免费巩固一遍记忆!</div></div>
+    ${kind==="new"?`<button class="btn" onclick="go('review')">顺手抓几个逃犯 →</button>`:""}
+    <button class="btn minor" onclick="go('home')">回警局大厅</button></div>`;
+}
+/* ================= 词汇档案 ================= */
+let W_TAB="all";
+function renderWords(tab){
+  if(tab)W_TAB=tab;
+  const V=visWords(), VSET=new Set(V.map(x=>x.w)); // 档案只显示当前轮已解锁的词
+  const learned=V.filter(x=>card(x.w).seen>0);
+  let list=W_TAB==="all"?V:(W_TAB==="wanted"?wantedList().filter(x=>VSET.has(x.w)):V.filter(x=>card(x.w).box>=3));
+  app.innerHTML=`
+  <div class="topbar"><div class="brand">📋 词汇档案 · 第${CNNUM[CH_NO]}章</div><div class="streak">${learned.length}/${V.length}</div></div>
+  <div class="tabs">
+    <button class="${W_TAB==="all"?"cur":""}" onclick="renderWords('all')">全部</button>
+    <button class="${W_TAB==="wanted"?"cur":""}" onclick="renderWords('wanted')">🚨 通缉中</button>
+    <button class="${W_TAB==="done"?"cur":""}" onclick="renderWords('done')">✅ 已归档</button>
+  </div>
+  ${list.map(x=>{
+    const c=S.cards[x.w];
+    const st=!c||c.seen===0?'<span class="box">未学</span>':(c.wanted?'<span class="box wt">通缉</span>':(c.box>=3?`<span class="box b3">已归档·第${c.box+1}站</span>`:`<span class="box">第${c.box+1}站/6</span>`));
+    return `<div class="wordrow"><span style="cursor:pointer" onclick="say('${x.w.replace(/'/g,"\\'")}',0.75)">🔊</span><span class="w" style="cursor:pointer" onclick="showWord('${x.w.replace(/'/g,"\\'")}')">${x.w} <span style="color:var(--dim);font-weight:400;font-size:12px">▸</span></span><span class="m">${x.cn}</span>${st}</div>`;
+  }).join("")||'<div class="small" style="margin-top:20px;text-align:center">这里还空着</div>'}`;
+}
+/* 启动(支持 ?page=learn|review|quiz|words 直达;?demo=1 造演示数据;调试用) */
+const QP=new URLSearchParams(location.search);
+if(QP.has("demo")){
+  // 前20个到期(供 review 调试),后60个散布在未来一周(供档案室看图)
+  WORDS.slice(0,20).forEach((x,i)=>{const c=card(x.w);c.seen=1;c.box=i%4;c.due=Date.now()-1000;});
+  WORDS.slice(20,80).forEach((x,i)=>{const c=card(x.w);c.seen=1;c.box=i%6;c.due=Date.now()+((i*13)%8)*DAY+DAY/2;});
+  const w1=card(WORDS[3].w);w1.wanted=true;w1.wrong=2;
+  const w2=card(WORDS[7].w);w2.wanted=true;w2.wrong=1;
+  S.streak=3;
+}
+if(QP.get("page")==="learn"&&QP.has("reveal")){
+  const news=newList();L={list:news.slice(0,10),i:0,phase:1};S.session={newW:0,caught:0,esc:0};renderLearn();
+}else if(QP.has("voices")){ // 调试:列出可用语音及当前选中
+  setTimeout(()=>{pickVoice();
+    const vs=speechSynthesis.getVoices().filter(v=>v.lang.replace("_","-").startsWith("en"));
+    app.innerHTML=`<div class="panel"><b>当前选用:${VOICE?VOICE.name:"(无)"}</b><div class="small" style="margin-top:8px">${vs.sort((a,b)=>voiceScore(b)-voiceScore(a)).map(v=>`${voiceScore(v)}分 · ${v.name} [${v.lang}]`).join("<br>")}</div><button class="btn" onclick="say('Anyone can be anything. I am Officer Judy Hopps!',0.85)">🔊 试听一句</button></div>`;
+  },600);
+}
+else if(QP.has("dojolv")){startDojoLv(+QP.get("dojolv"));if(QP.has("reveal"))(D.revealed=true,renderDojoStep());}
+else if(QP.get("page")){go(QP.get("page"));}
+else renderHome();
+</script>
+</body>
+</html>
