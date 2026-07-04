@@ -888,10 +888,19 @@ function playPure(id){
   a.play().catch(fall);
 }
 function toggleIpaVid(vid,btn){ // 老师口型视频:YouTube 原版(用户网络全局代理,B站拒代理IP而YouTube畅通)
-  // YouTube 嵌入要求带 referer:http/https 下页内内嵌;本地 file:// 发不出 referer(实测 Error 153),退化为新页签打开
-  if(location.protocol==="file:"){window.open("https://www.youtube.com/watch?v="+vid);return;}
   const slot=document.getElementById("ipavid");
   if(slot.firstChild){slot.innerHTML="";btn.textContent="🎬 看老师讲口型(Rachel's English)";return;}
+  if(location.protocol==="file:"){
+    // 本地版:YouTube 嵌入要求 referer,file:// 发不出(实测 Error 153)→ 优先播本机下载的视频文件
+    //(ipa_rachel_videos/ 只存本机,不进公开仓库),没有文件再退化为新页签打开
+    const v=document.createElement("video");
+    v.src="../ipa_rachel_videos/"+vid+".mp4";v.controls=true;
+    v.style.cssText="width:100%;border-radius:12px;margin-top:10px";
+    v.onerror=()=>{slot.innerHTML="";btn.textContent="🎬 看老师讲口型(Rachel's English)";window.open("https://www.youtube.com/watch?v="+vid);};
+    slot.appendChild(v);v.play().catch(()=>{});
+    btn.textContent="✕ 收起视频";
+    return;
+  }
   slot.innerHTML=`<iframe src="https://www.youtube-nocookie.com/embed/${vid}?rel=0"
     style="width:100%;aspect-ratio:16/9;border:0;border-radius:12px;margin-top:10px"
     allow="encrypted-media;fullscreen" allowfullscreen></iframe>`;
