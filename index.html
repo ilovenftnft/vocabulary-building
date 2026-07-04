@@ -880,13 +880,21 @@ let IPA_AUDIO=null;
 function playPure(id){
   stopMovie();try{speechSynthesis.cancel();}catch(e){}
   if(IPA_AUDIO)IPA_AUDIO.pause();
-  IPA_AUDIO=new Audio("ipa/"+id+".ogg");IPA_AUDIO.play();
+  // 优先 Rachel 亲口示范(ipa_rachel/ 只存本机,版权同电影音频的规矩,不进公开仓库);没有则回落维基录音
+  let fell=false;
+  const fall=()=>{if(fell)return;fell=true;IPA_AUDIO=new Audio("ipa/"+id+".ogg");IPA_AUDIO.play();};
+  const a=new Audio("../ipa_rachel/"+id+".ogg");
+  a.onerror=fall;IPA_AUDIO=a;
+  a.play().catch(fall);
 }
-function toggleIpaVid(bv,btn){ // 老师口型视频:B站在线内嵌(danmaku=0 关弹幕),再点收起,不跳出应用
+function toggleIpaVid(vid,btn){ // 老师口型视频:YouTube 原版(用户网络全局代理,B站拒代理IP而YouTube畅通)
+  // YouTube 嵌入要求带 referer:http/https 下页内内嵌;本地 file:// 发不出 referer(实测 Error 153),退化为新页签打开
+  if(location.protocol==="file:"){window.open("https://www.youtube.com/watch?v="+vid);return;}
   const slot=document.getElementById("ipavid");
   if(slot.firstChild){slot.innerHTML="";btn.textContent="🎬 看老师讲口型(Rachel's English)";return;}
-  slot.innerHTML=`<iframe src="https://player.bilibili.com/player.html?bvid=${bv}&danmaku=0&autoplay=0"
-    style="width:100%;aspect-ratio:16/9;border:0;border-radius:12px;margin-top:10px" allowfullscreen></iframe>`;
+  slot.innerHTML=`<iframe src="https://www.youtube-nocookie.com/embed/${vid}?rel=0"
+    style="width:100%;aspect-ratio:16/9;border:0;border-radius:12px;margin-top:10px"
+    allow="encrypted-media;fullscreen" allowfullscreen></iframe>`;
   btn.textContent="✕ 收起视频";
 }
 function ipaHl(ipa,pat){ // 音标串里把目标音涂橙
@@ -906,7 +914,7 @@ function renderIPA(id){
   app.innerHTML=`<div class="stage">
     <div class="ipasym">/${s.sym}/</div>
     <button class="btn" onclick="playPure('${s.id}')">▶ 听这个音</button>
-    ${s.vid?`<button class="btn minor" onclick="toggleIpaVid('${s.vid}',this)">🎬 看老师讲口型(Rachel's English)</button>
+    ${s.yt?`<button class="btn minor" onclick="toggleIpaVid('${s.yt}',this)">🎬 看老师讲口型(Rachel's English)</button>
     <div id="ipavid"></div>`:""}
     <div class="small" style="margin-top:12px">${s.tip}</div>
     <h2 class="sec" style="margin-top:18px;text-align:left">在学过的词里找它</h2>
