@@ -649,7 +649,7 @@ function renderLearn(){
       <div class="small" style="margin-top:14px">听!这个${x.type==="chunk"?"短语":"单词"}是什么意思?<br>先自己想,想不出再看答案</div>
       <button class="speak-btn" onclick="say('${x.w}',0.75)">🔁</button>
       <div style="display:flex;gap:10px">
-        ${L.i>0?`<button class="btn minor" style="width:36%" onclick="learnPrev()">← 上一个</button>`:""}
+        ${L.i>0?`<button class="btn" style="flex:1" onclick="learnPrev()">← 上一个</button>`:""}
         <button class="btn" style="flex:1" onclick="L.phase=1;renderLearn()">看答案</button>
       </div>
     </div>`;
@@ -659,7 +659,7 @@ function renderLearn(){
       ${cardBody(x)}
       <button class="btn green" onclick="say('${x.en.replace(/'/g,"\\'")}',0.8)">🎤 跟读这句台词</button>
       <div style="display:flex;gap:10px">
-        ${L.i>0?`<button class="btn minor" style="width:36%" onclick="learnPrev()">← 上一个</button>`:""}
+        ${L.i>0?`<button class="btn" style="flex:1" onclick="learnPrev()">← 上一个</button>`:""}
         <button class="btn" style="flex:1" onclick="learnNext()">下一个 →</button>
       </div>
     </div>`;
