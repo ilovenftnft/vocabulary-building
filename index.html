@@ -257,12 +257,13 @@ function voiceScore(v){
   if(v.lang==="en-US"||v.lang==="en_US") return prem?50:40;
   return 10;
 }
-let ALT_VOICE=null; // 次选语音(非 Ava 里分最高的)
+let ALT_VOICE=null; // 次选语音:钉死 Samantha——AVA_BAD 名单就是拿它当"读得对"的参照校验的
+                    // (2026-07-03 实听:Zoe (Premium) 分更高但 far 同样读歪,"分最高的非 Ava"不可靠)
 function pickVoice(){
   const vs=speechSynthesis.getVoices().filter(v=>v.lang.replace("_","-").startsWith("en"));
   vs.sort((a,b)=>voiceScore(b)-voiceScore(a));
   VOICE=vs[0]||null;
-  ALT_VOICE=vs.find(v=>!/Ava/i.test(v.name))||null;
+  ALT_VOICE=vs.find(v=>/Samantha/i.test(v.name))||vs.find(v=>!/Ava/i.test(v.name))||null;
 }
 speechSynthesis.onvoiceschanged=pickVoice; pickVoice();
 /* Ava (Premium) 孤立朗读这些词有缺陷(2026-07-03 合成→whisper 转写三连读实测:
