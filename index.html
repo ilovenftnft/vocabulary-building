@@ -283,10 +283,10 @@ let MOVIE=null, MOVIE_OK=false, movieTimer=null;
   const cands=["../疯狂动物城.m4a","../疯狂动物城.mp3","../电影原声.m4a","../电影原声.mp3","../zootopia.m4a","../zootopia.mp3"];
   let i=0;
   function tryNext(){
-    if(i>=cands.length)return;
+    if(MOVIE_OK||i>=cands.length)return; // IndexedDB 那路先成了就别覆盖
     MOVIE=new Audio(cands[i++]);
     MOVIE.preload="metadata";
-    MOVIE.onloadedmetadata=()=>{MOVIE_OK=true;};
+    MOVIE.onloadedmetadata=()=>{MOVIE_OK=true;refreshMediaRow();};
     MOVIE.onerror=tryNext;
   }
   tryNext();
@@ -297,9 +297,81 @@ let VID=null,VID_OK=false,VWRAP=null,VLAST=null;
 (function initVideo(){
   VID=document.createElement("video");
   VID.src=encodeURI("../8疯狂动物城.mkv");VID.preload="metadata";VID.playsInline=true;
-  VID.onloadedmetadata=()=>{VID_OK=true;};
+  VID.onloadedmetadata=()=>{VID_OK=true;refreshMediaRow();};
   VID.onclick=()=>{if(VLAST)playClip(VLAST.sec,VLAST.dur,true);}; // 点画面重播
 })();
+/* ===== 网页版:本地电影文件加载 =====
+   公开网页不含电影音视频(版权),对方从维护者处私下拿到文件后在这里选一次:
+   音频(~81MB)存进 IndexedDB,以后每次打开自动生效;视频(~1.3GB)也尝试存,
+   存不下(手机等配额小)就本次会话生效、下次再选。没有文件时照旧退回机器朗读 */
+const MDB={
+  open(){return new Promise((res,rej)=>{const r=indexedDB.open("zpd_media",1);
+    r.onupgradeneeded=()=>r.result.createObjectStore("files");
+    r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});},
+  async get(k){const db=await this.open();return new Promise(res=>{
+    const t=db.transaction("files").objectStore("files").get(k);
+    t.onsuccess=()=>res(t.result);t.onerror=()=>res(null);});},
+  async set(k,v){const db=await this.open();return new Promise((res,rej)=>{
+    const t=db.transaction("files","readwrite").objectStore("files").put(v,k);
+    t.onsuccess=()=>res(true);t.onerror=()=>rej(t.error);});}
+};
+const FILM_DUR=6512.5; // 本片时间线总长(秒),用来提醒"你选的文件版本不对"
+function checkDur(el,label){
+  el.addEventListener("loadedmetadata",()=>{
+    if(el.duration&&Math.abs(el.duration-FILM_DUR)>30)
+      alert(`⚠️ 这个${label}文件的时长和词卡时间线差得多,台词位置可能对不上。请用维护者发你的那份文件。`);
+  },{once:true});
+}
+function useAudioFile(f){
+  MOVIE=new Audio(URL.createObjectURL(f));MOVIE.preload="metadata";
+  MOVIE.onloadedmetadata=()=>{MOVIE_OK=true;refreshMediaRow();};
+  checkDur(MOVIE,"音频");
+}
+function useVideoFile(f){
+  VID.src=URL.createObjectURL(f);
+  checkDur(VID,"视频"); // onloadedmetadata 已在 initVideo 里置 VID_OK
+}
+async function loadStoredMedia(){ // 启动时恢复上次存的文件
+  try{
+    const a=await MDB.get("audio"); if(a&&!MOVIE_OK)useAudioFile(a);
+    const v=await MDB.get("video"); if(v&&!VID_OK)useVideoFile(v);
+  }catch(e){}
+}
+setTimeout(loadStoredMedia,800); // 等相对路径探测先跑一轮,有本地文件就不用动库
+function pickMedia(){
+  const inp=document.createElement("input");
+  inp.type="file";inp.multiple=true;
+  inp.accept="video/*,audio/*,.mkv,.m4a,.mp3,.mp4,.aac,.wav";
+  inp.onchange=async()=>{
+    const row=document.getElementById("mediarow");
+    if(row)row.innerHTML='<div class="small" style="text-align:center">⏳ 正在保存文件到浏览器…</div>';
+    for(const f of inp.files){
+      const isVideo=f.type.startsWith("video")||/\.(mkv|mp4|mov|webm)$/i.test(f.name)||(!f.type.startsWith("audio")&&f.size>300*1048576);
+      if(isVideo){
+        useVideoFile(f);
+        try{await MDB.set("video",f);}catch(e){} // 存不下就只在本次会话生效
+      }else{
+        useAudioFile(f);
+        try{await MDB.set("audio",f);}catch(e){}
+      }
+    }
+    if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();
+    refreshMediaRow();
+  };
+  inp.click();
+}
+function mediaRow(){
+  let inner="";
+  if(!VID_OK){ // 画面就绪后整行消失,不占孩子的屏幕
+    inner=MOVIE_OK
+      ?`<span class="tstamp" style="cursor:pointer" onclick="pickMedia()">📂 选电影视频文件,看画面</span>`
+      :`<span class="tstamp" style="cursor:pointer" onclick="pickMedia()">📂 加载电影文件</span>
+        <div style="margin-top:4px;color:#5f7196">有《疯狂动物城》音频/视频文件就有原声和画面(找维护者要);没有也能用,朗读代替</div>`;
+    inner=`<div class="small" style="text-align:center;margin-top:16px">${inner}</div>`;
+  }
+  return `<div id="mediarow">${inner}</div>`;
+}
+function refreshMediaRow(){const el=document.getElementById("mediarow");if(el)el.outerHTML=mediaRow();}
 function showVid(){
   if(!VWRAP){
     VWRAP=document.createElement("div");VWRAP.className="vidwrap";
@@ -487,6 +559,7 @@ function renderHome(){
     <b style="cursor:pointer;color:var(--green)" onclick="playMovie('${rw[0].t}','${rw[0].w}')">▶ 试听测试句</b>
     <div style="margin-top:4px;color:#5f7196">测试句应含 "${rw[0].w}"(本章开头的台词,英文见词卡)</div>
   </div>`:""}
+  ${mediaRow()}
   <div class="small" style="text-align:center;margin-top:16px;color:#5f7196">
     <span style="cursor:pointer" onclick="exportSave()">📦 导出存档</span> ·
     <span style="cursor:pointer" onclick="importSave()">📥 导入存档</span> ·
