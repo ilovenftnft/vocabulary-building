@@ -187,7 +187,10 @@ const GAPS=[1,2,4,7,15,30];
 const RANKS=[[0,"见习学员","🐇"],[15,"警校学员","🎓"],[40,"巡警","👮"],[80,"警探","🕵️"],[130,"警督","⭐"],[180,"警监","🌟"],[999,"局长","🏆"]];
 let S=load();
 function load(){
-  try{let s=JSON.parse(localStorage.getItem(KEY));
+  try{
+    // 重置墓碑还在却又冒出存档 = 修复前的旧页签把重置前的状态写回来了,丢弃(墓碑在下一次正常 save 时清除)
+    if(localStorage.getItem(KEY+"_reset")&&localStorage.getItem(KEY))localStorage.removeItem(KEY);
+    let s=JSON.parse(localStorage.getItem(KEY));
     if(!s){const old=JSON.parse(localStorage.getItem("zpd_ch1_v1"));if(old&&old.cards)s=old;} // 单章时代旧档
     if(s&&s.cards){
     s.dojo=s.dojo||{};
@@ -202,7 +205,7 @@ function load(){
           dojo:{done:[],free:false},session:{newW:0,caught:0,esc:0}};
 }
 function solvedCh(){return !!(S.badges&&S.badges[CH_NO]);}
-function save(){localStorage.setItem(KEY,JSON.stringify(S));}
+function save(){localStorage.removeItem(KEY+"_reset");localStorage.setItem(KEY,JSON.stringify(S));}
 // 别的页签改了存档(比如重置):本页签立即重载,防止内存里的旧状态在下次保存时把新档覆盖回去
 window.addEventListener("storage",e=>{if(e.key===KEY||e.key===null)location.reload();});
 function today(){const d=new Date();return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;}
@@ -584,7 +587,7 @@ function renderHome(){
 }
 function resetAll(){
   const t=prompt('⚠️ 将清空全部学习进度(词卡、警衔、打卡、道场),不可恢复!\n确认请输入:重置');
-  if(t==="重置"){localStorage.removeItem(KEY);location.href=location.pathname;}
+  if(t==="重置"){localStorage.setItem(KEY+"_reset","1");localStorage.removeItem(KEY);location.href=location.pathname;}
 }
 /* 存档随文件走:换电脑/备份用。导出=下载 JSON;导入=读文件覆盖本机进度 */
 function exportSave(){
@@ -599,7 +602,7 @@ function importSave(){
       const s=JSON.parse(r.result);
       if(!s||typeof s.cards!=="object")throw 0;
       if(!confirm(`该存档:已学 ${Object.values(s.cards).filter(c=>c.seen>0).length} 词、连续 ${s.streak||0} 天。\n导入会覆盖这台电脑上的现有进度,确定?`))return;
-      localStorage.setItem(KEY,JSON.stringify(s));location.href=location.pathname;
+      localStorage.removeItem(KEY+"_reset");localStorage.setItem(KEY,JSON.stringify(s));location.href=location.pathname;
     }catch(e){alert("这不是有效的 ZPD 存档文件");}};
     r.readAsText(f.files[0]);};
   f.click();
