@@ -643,14 +643,20 @@ function renderLearn(){
       <div class="soundwave">🔊</div>
       <div class="small" style="margin-top:14px">听!这个${x.type==="chunk"?"短语":"单词"}是什么意思?<br>先自己想,想不出再看答案</div>
       <button class="speak-btn" onclick="say('${x.w}',0.75)">🔁</button>
-      <button class="btn" onclick="L.phase=1;renderLearn()">看答案</button>
+      <div style="display:flex;gap:10px">
+        ${L.i>0?`<button class="btn minor" style="width:36%" onclick="learnPrev()">← 上一个</button>`:""}
+        <button class="btn" style="flex:1" onclick="L.phase=1;renderLearn()">看答案</button>
+      </div>
     </div>`;
     setTimeout(()=>say(x.w,0.75),300);
   }else{
     app.innerHTML=`<div class="stage"><div class="progress-mini">${dots}</div>
       ${cardBody(x)}
       <button class="btn green" onclick="say('${x.en.replace(/'/g,"\\'")}',0.8)">🎤 跟读这句台词</button>
-      <button class="btn" onclick="learnNext()">下一个 →</button>
+      <div style="display:flex;gap:10px">
+        ${L.i>0?`<button class="btn minor" style="width:36%" onclick="learnPrev()">← 上一个</button>`:""}
+        <button class="btn" style="flex:1" onclick="learnNext()">下一个 →</button>
+      </div>
     </div>`;
     say(x.w,0.75);
   }
@@ -680,9 +686,12 @@ function showWord(w){
 function learnNext(){
   const x=L.list[L.i];
   const c=card(x.w);
-  c.seen=1;c.box=0;c.due=Date.now()+GAPS[0]*DAY;
-  S.session.newW++;save();
+  if(!c.seen){c.seen=1;c.box=0;c.due=Date.now()+GAPS[0]*DAY;S.session.newW++;save();} // 回看过的卡不重复计数/重置复习时间
   L.i++;L.phase=0;renderLearn();
+}
+function learnPrev(){ // 回看上一张卡(直接落在答案面)
+  if(L.i<1)return;
+  stopMovie();L.i--;L.phase=1;renderLearn();
 }
 /* ================= 复习 / 抓捕(拼写三台阶) ================= */
 let R={list:[],i:0,tryn:0};
