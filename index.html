@@ -31,6 +31,16 @@ button{font-family:inherit;border:none;cursor:pointer;border-radius:14px}
 .btn.minor{background:var(--card);color:var(--text);box-shadow:0 4px 0 #1e3055}
 .btn.green{background:var(--green);box-shadow:0 4px 0 #2aa957}
 .btn:disabled{opacity:.4;box-shadow:none}
+/* 音标馆 */
+.ipagrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:6px}
+.ipachip{background:var(--navy2);border:1px solid var(--line);border-radius:14px;padding:12px 0;font-size:22px;font-weight:800;color:var(--text)}
+.ipachip:active{background:var(--card)}
+.ipasym{font-size:56px;font-weight:800;color:var(--gold)}
+.ipaex{display:flex;align-items:center;gap:10px;background:var(--navy);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:8px;text-align:left;flex-wrap:wrap}
+.ipaex .w{font-size:18px;font-weight:800;cursor:pointer}
+.ipaex .i{color:var(--dim);font-size:14px}
+.ipaex .i b{color:var(--carrot);font-weight:800}
+.ipaex .c{font-size:13px;color:var(--dim);margin-left:auto}
 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
 .brand{font-size:15px;font-weight:800;letter-spacing:1px;color:var(--gold)}
 .streak{font-size:14px;color:var(--dim)}
@@ -145,6 +155,7 @@ h2.sec{font-size:17px;margin:18px 0 4px;color:var(--gold)}
   <button id="nav-words" onclick="go('words')">📋 词汇档案</button>
 </div></div>
 <script src="phonics.js"></script>
+<script src="ipa_data.js"></script>
 <script src="dojo_ch1.js"></script>
 <script>
 /* ===== 章节加载器 =====
@@ -492,7 +503,7 @@ function go(page,arg){
   document.getElementById("nav-dojo").className=page==="dojo"?"cur":"";
   document.getElementById("nav-words").className=page==="words"?"cur":"";
   window.scrollTo(0,0);stopMovie();
-  ({home:renderHome,words:renderWords,learn:startLearn,review:startReview,quiz:startQuiz,dojo:renderDojo,map:renderMap}[page])(arg);
+  ({home:renderHome,words:renderWords,learn:startLearn,review:startReview,quiz:startQuiz,dojo:renderDojo,map:renderMap,ipa:renderIPA}[page])(arg);
 }
 /* ================= 城区地图(选章) ================= */
 function switchCh(n){localStorage.setItem("zpd_chapter",n);location.href=location.pathname+"?ch="+n;}
@@ -554,6 +565,11 @@ function renderHome(){
     <div class="ico">🚨</div>
     <div class="tt"><b>抓捕逃犯</b><span>通缉榜 ${wanted} 个 · 到期复习 ${due} 个</span></div>
     <button class="go" onclick="go('review')" ${wanted===0&&due===0?"disabled":""}>${wanted===0&&due===0?"无案":"出警"}</button>
+  </div>
+  <div class="task">
+    <div class="ico">🔤</div>
+    <div class="tt"><b>音标馆</b><span>40 个美式音标 · 看懂拼读规律的钥匙</span></div>
+    <button class="go" onclick="go('ipa')">进入</button>
   </div>
   <div class="task ${S.dojo.done.length>=DOJO.length?"done":""}">
     <div class="ico">🥋</div>
@@ -858,6 +874,43 @@ function checkQuiz(){
   if(ok){Q.score++;fb.className="feedback ok";fb.textContent="✅ 线索破译!";say(x.w,0.8);}
   else{fb.className="feedback bad";fb.textContent=`❌ 正确答案:${x.w}`;const c=card(x.w);c.wanted=true;c.caught=0;save();}
   setTimeout(()=>{Q.i++;renderQuiz();},900);
+}
+/* ================= 音标馆 ================= */
+let IPA_AUDIO=null;
+function playPure(id){
+  stopMovie();try{speechSynthesis.cancel();}catch(e){}
+  if(IPA_AUDIO)IPA_AUDIO.pause();
+  IPA_AUDIO=new Audio("ipa/"+id+".ogg");IPA_AUDIO.play();
+}
+function ipaHl(ipa,pat){ // 音标串里把目标音涂橙
+  try{return esc(ipa).replace(new RegExp(pat,"g"),m=>`<b>${m}</b>`);}catch(e){return esc(ipa);}
+}
+function renderIPA(id){
+  if(!id){
+    const KINDS=[["v","单元音"],["d","双元音(一个音滑到另一个音)"],["c","辅音"]];
+    app.innerHTML=`<div class="topbar"><div class="brand">🔤 音标馆</div></div>
+      <div class="small" style="margin:4px 2px 12px">一个符号=一个固定的音。点开听它,再到学过的词里找它</div>
+      ${KINDS.map(([k,name])=>`<h2 class="sec">${name}</h2>
+        <div class="ipagrid">${IPA_SOUNDS.filter(s=>s.kind===k).map(s=>`<button class="ipachip" onclick="go('ipa','${s.id}')">${s.sym}</button>`).join("")}</div>`).join("")}
+      <div class="small" style="text-align:center;margin-top:16px;color:#5f7196">纯音录音:Wikimedia Commons · CC BY-SA</div>`;
+    return;
+  }
+  const s=IPA_SOUNDS.find(x=>x.id===id);if(!s){go("ipa");return;}
+  app.innerHTML=`<div class="stage">
+    <div class="ipasym">/${s.sym}/</div>
+    <button class="btn" onclick="playPure('${s.id}')">▶ 听这个音</button>
+    <div class="small" style="margin-top:12px">${s.tip}</div>
+    <h2 class="sec" style="margin-top:18px;text-align:left">在学过的词里找它</h2>
+    ${s.ex.map(e=>{
+      const dur=e.sp?Math.min(Math.max(e.sp[1]-e.sp[0]+0.2,2),14):0;
+      return `<div class="ipaex">
+      <span class="w" onclick="say('${e.w.replace(/'/g,"\\'")}',0.75)">${e.w} 🔊</span>
+      <span class="i">/${ipaHl(e.ipa,s.pat)}/</span>
+      ${e.sp&&(VID_OK||MOVIE_OK)?`<span class="tstamp" style="cursor:pointer" onclick="playClip(${e.sp[0]}-0.35+(S.av||0),${dur})">▶ 原声</span>`:""}
+      <span class="c">${e.cn}</span>
+    </div>`;}).join("")}
+    <button class="btn minor" onclick="go('ipa')">← 返回音标表</button>
+  </div>`;
 }
 /* ================= 拼读道场 ================= */
 let D={lv:0,step:0,i:0,tryn:0,score:0,revealed:false};
