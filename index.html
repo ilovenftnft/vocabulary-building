@@ -203,6 +203,8 @@ function load(){
 }
 function solvedCh(){return !!(S.badges&&S.badges[CH_NO]);}
 function save(){localStorage.setItem(KEY,JSON.stringify(S));}
+// 别的页签改了存档(比如重置):本页签立即重载,防止内存里的旧状态在下次保存时把新档覆盖回去
+window.addEventListener("storage",e=>{if(e.key===KEY||e.key===null)location.reload();});
 function today(){const d=new Date();return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;}
 function card(w){ if(!S.cards[w]) S.cards[w]={box:0,due:0,seen:0,wrong:0,wanted:false,caught:0}; return S.cards[w];}
 function learnedCount(){return Object.values(S.cards).filter(c=>c.seen>0).length;}
