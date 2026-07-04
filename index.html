@@ -267,8 +267,9 @@ function pickVoice(){
 speechSynthesis.onvoiceschanged=pickVoice; pickVoice();
 /* Ava (Premium) 孤立朗读这些词有缺陷(2026-07-03 合成→whisper 转写三连读实测:
    big→build、hit→let、snack→smack、seed→see it、need→lead、farm→foreign;
-   整句语境里读同样的词没问题,所以只在"纯词表朗读"时换次选语音,例句仍用 Ava) */
-const AVA_BAD=new Set(["antidote", "arm", "bad", "badge", "ball", "big", "bite", "boom", "born", "catch", "cause", "charm", "cheese", "code", "cop", "course", "dad", "death", "die", "dress", "droopy", "fair", "farm", "fence", "fluff", "forgive", "form", "former", "frigid", "full", "fur", "get", "glad", "guess", "guy", "half", "head", "health", "hick", "hit", "hop", "hump", "jaguar", "jumbo", "kill", "knit", "late", "lead", "lie", "life", "long", "look", "lot", "mad", "meek", "need", "pause", "pay", "plot", "poor", "prayer", "press", "primitive", "rage", "ram", "rare", "revert", "rule", "salary", "scene", "seed", "sky", "slippery", "sly", "snack", "snot", "son", "sore", "speed", "teensy", "teeth", "tense", "through", "toward", "tram", "troop", "vest", "voyage", "want", "word", "worth", "year"]); // 由 tools/tts_check.py all 生成
+   整句语境里读同样的词没问题,所以只在"纯词表朗读"时换次选语音,例句仍用 Ava。
+   far 是人工听感入名单:whisper 转写正确但人耳听得出歪,机器检抓不到这类,见 tts_check.py 的 MANUAL_BAD) */
+const AVA_BAD=new Set(["antidote", "arm", "bad", "badge", "ball", "big", "bite", "boom", "born", "catch", "cause", "charm", "cheese", "code", "cop", "course", "dad", "death", "die", "dress", "droopy", "fair", "far", "farm", "fence", "fluff", "forgive", "form", "former", "frigid", "full", "fur", "get", "glad", "guess", "guy", "half", "head", "health", "hick", "hit", "hop", "hump", "jaguar", "jumbo", "kill", "knit", "late", "lead", "lie", "life", "long", "look", "lot", "mad", "meek", "need", "pause", "pay", "plot", "poor", "prayer", "press", "primitive", "rage", "ram", "rare", "revert", "rule", "salary", "scene", "seed", "sky", "slippery", "sly", "snack", "snot", "son", "sore", "speed", "teensy", "teeth", "tense", "through", "toward", "tram", "troop", "vest", "voyage", "want", "word", "worth", "year"]); // 由 tools/tts_check.py all 生成
 function needAltVoice(text){
   if(!VOICE||!/Ava/i.test(VOICE.name)||!ALT_VOICE)return false;
   if(/[^a-zA-Z ,']/.test(text))return false; // 含句号等标点=整句语境,Ava 读得对
