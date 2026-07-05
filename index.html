@@ -32,7 +32,9 @@ button{font-family:inherit;border:none;cursor:pointer;border-radius:14px}
 .btn.green{background:var(--green);box-shadow:0 4px 0 #2aa957}
 .btn:disabled{opacity:.4;box-shadow:none}
 /* 音标馆 */
-.vidcap{min-height:22px;font-size:13px;color:var(--text);text-align:center;padding:3px 6px 0}
+.vidcap{position:absolute;left:6%;right:6%;bottom:max(16%,60px);text-align:center;pointer-events:none}
+.vidcap span{display:inline-block;font-size:13px;color:#fff;background:rgba(0,0,0,.55);border-radius:6px;padding:2px 8px}
+.vidcap span:empty{display:none}
 .ipagrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:6px}
 .ipachip{background:var(--navy2);border:1px solid var(--line);border-radius:14px;padding:12px 0;font-size:22px;font-weight:800;color:var(--text)}
 .ipachip:active{background:var(--card)}
@@ -899,18 +901,21 @@ function toggleIpaVid(vid,btn){ // 老师口型视频:YouTube 原版(用户网�
     v.src="../ipa_rachel_videos/"+vid+".mp4";v.controls=true;
     v.style.cssText="width:100%;border-radius:12px;margin-top:10px";
     v.onerror=()=>{slot.innerHTML="";btn.textContent="🎬 看老师讲口型(Rachel's English)";window.open("https://www.youtube.com/watch?v="+vid);};
-    // 中文字幕(zh_subs.js 只存本机):不叠在画面上——她的视频底部烧录着英文单词标注,叠加必打架(用户定版),
-    // 改放视频正下方的横条里,永远不遮画面;拟声句无字幕
-    slot.appendChild(v);
+    // 中文字幕(zh_subs.js 只存本机):叠在画面内下部(用户定版),但抬到底部烧录英文标注区之上,
+    // 定位 bottom:17% 避开;拟声句无字幕
+    const wrap=document.createElement("div");wrap.style.cssText="position:relative";
+    wrap.appendChild(v);
     if(typeof IPA_SUBS!=="undefined"&&IPA_SUBS[vid]){
       const cap=document.createElement("div");cap.className="vidcap";
-      slot.appendChild(cap);
+      const sp=document.createElement("span");cap.appendChild(sp);
+      wrap.appendChild(cap);
       v.ontimeupdate=()=>{
         const t=v.currentTime;
         const c=IPA_SUBS[vid].find(c=>c.s<=t&&t<c.e&&c.zh.trim());
-        cap.textContent=c?c.zh:"";
+        sp.textContent=c?c.zh:"";
       };
     }
+    slot.appendChild(wrap);
     v.play().catch(()=>{});
     btn.textContent="✕ 收起视频";
     return;
