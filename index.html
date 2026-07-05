@@ -220,18 +220,8 @@ const DAY=86400000;
 // 有实验支撑的是间隔效应+提取练习+间隔随保持期扩张(Cepeda 2008),数值本身无神圣性
 const GAPS=[1,2,4,7,15,30];
 const RANKS=[[0,"见习学员","🐇"],[15,"警校学员","🎓"],[40,"巡警","👮"],[80,"警探","🕵️"],[130,"警督","⭐"],[180,"警监","🌟"],[999,"局长","🏆"]];
-/* 主题:全天默认纸面(2026-07-05 用户定,家里晚间开灯学习——深色只在暗环境占优);🌓 手动切深色并记住 */
-function applyTheme(){
-  if(!document.documentElement)return; // vm 回归环境无 documentElement
-  const t=localStorage.getItem("zpd_theme")||"paper";
-  if(t==="paper")document.documentElement.dataset.theme="paper";
-  else document.documentElement.removeAttribute("data-theme");
-}
-function toggleTheme(){
-  localStorage.setItem("zpd_theme",document.documentElement.dataset.theme==="paper"?"dark":"paper");
-  applyTheme();
-}
-applyTheme();
+/* 主题:固定纸面(2026-07-05 用户定,切换开关已删;深色变量集保留,要恢复时加回 toggleTheme 入口即可) */
+if(document.documentElement)document.documentElement.dataset.theme="paper";
 let S=load();
 function load(){
   try{
@@ -665,7 +655,6 @@ function renderHome(){
   </div>`:""}
   ${mediaRow()}
   <div class="small" style="text-align:center;margin-top:16px;color:var(--mute)">
-    <span style="cursor:pointer" onclick="toggleTheme()">🌓 换肤</span> ·
     <span style="cursor:pointer" onclick="exportSave()">📦 导出存档</span> ·
     <span style="cursor:pointer" onclick="importSave()">📥 导入存档</span> ·
     <span style="cursor:pointer" onclick="resetAll()">🗑 重置存档</span>
