@@ -700,13 +700,12 @@ function renderLearn(){
     LT=0;
     const isChunk=x.type==="chunk";
     app.innerHTML=`<div class="stage"><div class="progress-mini">${dots}</div>
-      <div class="soundwave">🔊</div>
       ${isChunk?`<div class="small" style="margin-top:14px">听!这个短语是什么意思?<br>先自己想,想不出再看答案</div>`:
       `<div class="small" style="margin-top:14px">👂 听到什么,把它打出来!</div>
       <input class="typebox" id="ltb" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="输入单词" onkeydown="if(event.key==='Enter')learnType()">
       <div class="hint" id="lhint"></div>
       <div class="feedback" id="lfb"></div>`}
-      <button class="speak-btn" onclick="say('${x.w}',0.75)">🔁</button>
+      <button class="speak-btn" onclick="say('${x.w}',0.75)">🔊</button>
       ${isChunk?"":`<button class="btn" onclick="learnType()">检查</button>`}
       <div style="display:flex;gap:10px">
         ${L.i>0?`<button class="btn ${isChunk?"":"minor"}" style="flex:1" onclick="learnPrev()">← 上一个</button>`:""}
@@ -914,8 +913,7 @@ function renderQuiz(){
       <div class="linebox"><div class="en">${blanked}</div><div class="zh">${x.zh}</div></div>`;
   }else{
     prompt=`<div class="small">🔍 线索 ${Q.i+1}/${Q.qs.length} · 拼读神探:只听声音,写出这个词</div>
-      <div class="soundwave" style="margin-top:14px">🔊</div>
-      <button class="speak-btn" onclick="say('${x.w}',0.7)">🔁</button>`;
+      <button class="speak-btn" onclick="say('${x.w}',0.7)">🔊</button>`;
     setTimeout(()=>say(x.w,0.7),350);
   }
   app.innerHTML=`<div class="stage">${prompt}
@@ -1075,8 +1073,7 @@ function renderDojoStep(){
     app.innerHTML=`<div class="stage">
       <div class="small" style="color:var(--gold)">${L.icon} 第三步:生词考验 · ${D.i+1}/${L.transfer.length}(这个词你没学过——全靠规律!)</div>
       <div class="cn-mean">${x.cn}</div>
-      <div class="soundwave" style="margin-top:10px;font-size:44px">🔊</div>
-      <button class="speak-btn" onclick="say('${x.w}',0.65)">🔁</button>
+      <button class="speak-btn" onclick="say('${x.w}',0.65)">🔊</button>
       <input class="typebox" id="db" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')dojoCheck(true)">
       <button class="btn" onclick="dojoCheck(true)">出招!</button>
       <div class="feedback" id="fb"></div></div>`;
