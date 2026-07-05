@@ -939,7 +939,6 @@ function renderIPA(id){
     <button class="btn" onclick="playPure('${s.id}')">▶ 听这个音</button>
     ${s.yt?`<button class="btn minor" onclick="toggleIpaVid('${s.yt}',this)">🎬 看老师讲口型(Rachel's English)</button>
     <div id="ipavid"></div>`:""}
-    <div class="small" style="margin-top:12px">${s.tip}</div>
     <h2 class="sec" style="margin-top:18px;text-align:left">在学过的词里找它</h2>
     ${s.ex.map(e=>{
       const dur=e.sp?Math.min(Math.max(e.sp[1]-e.sp[0]+0.2,2),14):0;
