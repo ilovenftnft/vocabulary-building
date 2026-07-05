@@ -713,10 +713,11 @@ function renderLearn(){
     app.innerHTML=`<div class="stage"><div class="progress-mini">${dots}</div>
       ${isChunk?`<div class="small" style="margin-top:14px">听!这个短语是什么意思?<br>先自己想,想不出再看答案</div>`:
       `<div class="small" style="margin-top:14px">👂 听!把听到的单词填进句子里</div>
-      <div class="linebox" style="margin-top:12px;text-align:left"><div class="en">${cloze}</div></div>
+      <div class="linebox" style="margin-top:12px;text-align:left"><div class="en">${cloze}
+        <span style="cursor:pointer" onmousedown="event.preventDefault()" onclick="say('${x.w}',0.75)">🔊</span></div></div>
       <div class="hint" id="lhint"></div>
       <div class="feedback" id="lfb"></div>`}
-      <button class="speak-btn" onclick="say('${x.w}',0.75)">🔊</button>
+      ${isChunk?`<button class="speak-btn" onclick="say('${x.w}',0.75)">🔊</button>`:""}
       ${isChunk?"":`<button class="btn" onclick="learnType()">检查</button>`}
       <div style="display:flex;gap:10px">
         ${L.i>0?`<button class="btn ${isChunk?"":"minor"}" style="flex:1" onclick="learnPrev()">← 上一个</button>`:""}
