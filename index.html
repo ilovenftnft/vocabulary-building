@@ -95,6 +95,7 @@ button{font-family:inherit;border:none;cursor:pointer;border-radius:14px}
 /* 音块配色:同一个词里,不同音块不同颜色(定义在 .chunk/.slot 之后以覆盖其默认色) */
 .hue0{color:#ffb454}.hue1{color:#6fe3ff}.hue2{color:#7dedaa}.hue3{color:#ff9ecd}.hue4{color:#c9b8ff}.hue5{color:#ffe08a}
 .typebox{margin-top:16px;width:100%;padding:14px;font-size:22px;text-align:center;border-radius:14px;border:2px solid var(--line);background:#182642;color:var(--text);outline:none;font-weight:700;letter-spacing:1px}
+.clozebox{display:inline-block;padding:2px 8px;font-size:inherit;font-family:inherit;text-align:center;border-radius:8px;border:2px solid var(--carrot);background:#182642;color:var(--carrot);outline:none;font-weight:800;vertical-align:baseline}
 .typebox:focus{border-color:var(--carrot)}
 .hint{margin-top:10px;font-size:15px;color:var(--dim);min-height:22px}
 .hint b{color:var(--carrot);letter-spacing:2px}
@@ -698,13 +699,21 @@ function renderLearn(){
   if(L.i>=L.list.length){markStudy();sessionReport("new");return;}
   const x=L.list[L.i];
   const dots=L.list.map((_,k)=>`<i class="${k<L.i?"on":""}"></i>`).join("");
-  if(L.phase===0){ // 声音先行:听音打词(和复习验收同一形式,2026-07-04 用户定;短语整句打字太重,保持先想再看)
+  if(L.phase===0){ // 声音先行:原句完形填空式听写(2026-07-05 用户定)——整句摆出,目标词空成内嵌输入框
     LT=0;
     const isChunk=x.type==="chunk";
+    let cloze="";
+    if(!isChunk){
+      const re=new RegExp("\\b("+x.w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"[a-z]*)\\b","i");
+      const m=x.en.match(re);
+      const inp=(n)=>`<input class="clozebox" id="ltb" size="${Math.max(4,n)}" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')learnType()">`;
+      cloze=m?esc(x.en).replace(re,inp(m[1].length)) // 变形也留同长度的空
+             :inp(x.w.length); // 兜底:例句异常时退回裸输入框
+    }
     app.innerHTML=`<div class="stage"><div class="progress-mini">${dots}</div>
       ${isChunk?`<div class="small" style="margin-top:14px">听!这个短语是什么意思?<br>先自己想,想不出再看答案</div>`:
-      `<div class="small" style="margin-top:14px">👂 听到什么,把它打出来!</div>
-      <input class="typebox" id="ltb" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="输入单词" onkeydown="if(event.key==='Enter')learnType()">
+      `<div class="small" style="margin-top:14px">👂 听!把听到的单词填进句子里</div>
+      <div class="linebox" style="margin-top:12px;text-align:left"><div class="en">${cloze}</div></div>
       <div class="hint" id="lhint"></div>
       <div class="feedback" id="lfb"></div>`}
       <button class="speak-btn" onclick="say('${x.w}',0.75)">🔊</button>
@@ -756,11 +765,14 @@ function learnNext(){
   L.i++;L.phase=0;renderLearn();
 }
 let LT=0; // 学习页听写的重试计数(每张卡归零)
-function learnType(){ // 听音打词:对了自动翻答案面;错了给音块递进提示(不计入复习调度,学习阶段只练不罚)
+function learnType(){ // 完形听写:原形或句中变形都算对;错了给音块递进提示(不计入复习调度,学习阶段只练不罚)
   const x=L.list[L.i];
   const v=(document.getElementById("ltb").value||"").trim().toLowerCase();
   const fb=document.getElementById("lfb");
-  if(v===x.w.toLowerCase()){
+  const re=new RegExp("\\b("+x.w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"[a-z]*)\\b","i");
+  const m=x.en.match(re);
+  const ok=[x.w.toLowerCase()];if(m)ok.push(m[1].toLowerCase());
+  if(ok.includes(v)){
     fb.className="feedback ok";fb.textContent="✅ 对!";say(x.w,0.8);
     setTimeout(()=>{L.phase=1;renderLearn();},750);
   }else{
