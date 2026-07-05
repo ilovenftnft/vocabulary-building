@@ -9,7 +9,18 @@
   --navy:#1b2a4a; --navy2:#24365e; --card:#2c4270; --line:#3d5585;
   --carrot:#ff9f3c; --carrot2:#ff7b2e; --green:#4cd97b; --red:#ff6b6b;
   --gold:#ffd166; --text:#f2f5fb; --dim:#9fb0cf;
+  --well:#182642; --mute:#5f7196; --shadow2:#1e3055;
+  --ph-bg:#1f4d43; --ph-text:#7dedc9; --ok-bg:#1f4d33; --ok-text:#b8f5cf; --note-bg:#33305a; --note-text:#d9d4ff;
 }
+html[data-theme=paper]{
+  --navy:#f2ecdb; --navy2:#faf6ea; --card:#e9e0c9; --line:#d3c7a8;
+  --carrot:#d97a14; --carrot2:#b9650d; --green:#2f9e57; --red:#cf4b3d;
+  --gold:#9a7415; --text:#2c2c34; --dim:#6e6a5c;
+  --well:#fffdf4; --mute:#8d8774; --shadow2:#cfc3a4;
+  --ph-bg:#e2efe3; --ph-text:#22684a; --ok-bg:#ddefdf; --ok-text:#1f6b3d; --note-bg:#eae6f7; --note-text:#4a3f8a;
+}
+html[data-theme=paper] .hue0{color:#c25e00}html[data-theme=paper] .hue1{color:#0f7fa8}html[data-theme=paper] .hue2{color:#238a52}html[data-theme=paper] .hue3{color:#c2417f}html[data-theme=paper] .hue4{color:#6a4fc2}html[data-theme=paper] .hue5{color:#9a7415}
+html[data-theme=paper] .back{background:rgba(250,246,234,.96)}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{background:var(--navy);color:var(--text);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh}
 #app{max-width:520px;margin:0 auto;padding:16px 16px 90px}
@@ -28,11 +39,11 @@ body{background:var(--navy);color:var(--text);font-family:-apple-system,"PingFan
 button{font-family:inherit;border:none;cursor:pointer;border-radius:14px}
 .btn{display:block;width:100%;padding:16px;font-size:18px;font-weight:700;margin-top:12px;color:#1b2a4a;background:var(--carrot);box-shadow:0 4px 0 var(--carrot2);transition:transform .05s}
 .btn:active{transform:translateY(3px);box-shadow:none}
-.btn.minor{background:var(--card);color:var(--text);box-shadow:0 4px 0 #1e3055}
+.btn.minor{background:var(--card);color:var(--text);box-shadow:0 4px 0 var(--shadow2)}
 .btn.green{background:var(--green);box-shadow:0 4px 0 #2aa957}
 .btn:disabled{opacity:.4;box-shadow:none}
 .btn.btn-sm{padding:10px;font-size:14px;margin-top:0;box-shadow:0 2px 0 var(--carrot2)} /* 低调按钮:内容是主角,控件沉底 */
-.btn.minor.btn-sm{box-shadow:0 2px 0 #1e3055}
+.btn.minor.btn-sm{box-shadow:0 2px 0 var(--shadow2)}
 /* 音标馆 */
 .vidcap{position:absolute;left:6%;right:6%;bottom:4%;text-align:center;pointer-events:none}
 .vidcap span{display:inline-block;font-size:13px;color:#fff;background:rgba(0,0,0,.55);border-radius:6px;padding:2px 8px}
@@ -54,7 +65,7 @@ button{font-family:inherit;border:none;cursor:pointer;border-radius:14px}
 .rank-badge{width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe29a,var(--carrot));display:flex;align-items:center;justify-content:center;font-size:32px;flex:none;box-shadow:0 0 0 4px #3d5585}
 .rank-name{font-size:20px;font-weight:800}
 .rank-sub{font-size:13px;color:var(--dim);margin-top:2px}
-.bar{height:12px;background:#182642;border-radius:6px;overflow:hidden;margin-top:8px;border:1px solid var(--line)}
+.bar{height:12px;background:var(--well);border-radius:6px;overflow:hidden;margin-top:8px;border:1px solid var(--line)}
 .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--carrot),var(--gold));border-radius:6px;transition:width .6s}
 .bar.green>i{background:linear-gradient(90deg,#37c46e,#7dedaa)}
 .small{font-size:13px;color:var(--dim)}
@@ -75,31 +86,31 @@ button{font-family:inherit;border:none;cursor:pointer;border-radius:14px}
 .bigword{font-size:40px;font-weight:800;letter-spacing:.5px;word-break:break-word;line-height:1.15}
 .ipa{color:var(--dim);font-size:17px;margin-top:6px}
 .cn-mean{font-size:22px;font-weight:700;margin-top:10px;color:var(--gold)}
-.linebox{background:#182642;border-radius:14px;padding:13px;margin-top:16px;text-align:left}
+.linebox{background:var(--well);border-radius:14px;padding:13px;margin-top:16px;text-align:left}
 .linebox .en{font-size:16.5px;line-height:1.5}
 .linebox .en em{color:var(--carrot);font-style:normal;font-weight:800;border-bottom:2px solid var(--carrot)}
 .linebox .zh{font-size:14px;color:var(--dim);margin-top:6px;line-height:1.5}
 .tstamp{display:inline-block;font-size:12px;color:#1b2a4a;background:var(--gold);border-radius:6px;padding:1px 8px;margin-top:8px;font-weight:700}
-.notebox{background:#33305a;border-radius:12px;padding:11px 13px;margin-top:10px;text-align:left;font-size:13.5px;line-height:1.55;color:#d9d4ff}
-.phchip{display:block;background:#1f4d43;color:#7dedc9;border-radius:12px;padding:11px 13px;margin-top:10px;text-align:left;font-size:13.5px;line-height:1.55;cursor:pointer}
+.notebox{background:var(--note-bg);border-radius:12px;padding:11px 13px;margin-top:10px;text-align:left;font-size:13.5px;line-height:1.55;color:var(--note-text)}
+.phchip{display:block;background:var(--ph-bg);color:var(--ph-text);border-radius:12px;padding:11px 13px;margin-top:10px;text-align:left;font-size:13.5px;line-height:1.55;cursor:pointer}
 .speak-btn{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:50%;width:54px;height:54px;font-size:26px;margin:14px auto 0;display:flex;align-items:center;justify-content:center}
 .speak-btn:active{background:var(--line)}
 .soundwave{font-size:64px;animation:pulse 1.2s infinite}
 @keyframes pulse{0%,100%{opacity:.75;transform:scale(1)}50%{opacity:1;transform:scale(1.12)}}
 .choice{display:block;width:100%;padding:14px;margin-top:10px;font-size:17px;font-weight:600;background:var(--card);color:var(--text);border:1px solid var(--line);text-align:left}
-.choice.ok{background:#1f4d33;border-color:var(--green)}
+.choice.ok{background:var(--ok-bg);border-color:var(--green)}
 .choice.bad{background:#54282e;border-color:var(--red)}
 .chunkzone{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px}
 .chunk{padding:10px 16px;font-size:19px;font-weight:700;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:12px}
 .chunk.used{opacity:.25;pointer-events:none}
 .slotline{min-height:46px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:14px}
-.slot{padding:8px 14px;font-size:19px;font-weight:700;background:#1f4d33;border:1px solid var(--green);border-radius:10px;color:#b8f5cf}
+.slot{padding:8px 14px;font-size:19px;font-weight:700;background:var(--ok-bg);border:1px solid var(--green);border-radius:10px;color:var(--ok-text)}
 /* 音块配色:同一个词里,不同音块不同颜色(定义在 .chunk/.slot 之后以覆盖其默认色) */
 .hue0{color:#ffb454}.hue1{color:#6fe3ff}.hue2{color:#7dedaa}.hue3{color:#ff9ecd}.hue4{color:#c9b8ff}.hue5{color:#ffe08a}
-.typebox{margin-top:16px;width:100%;padding:14px;font-size:22px;text-align:center;border-radius:14px;border:2px solid var(--line);background:#182642;color:var(--text);outline:none;font-weight:700;letter-spacing:1px}
+.typebox{margin-top:16px;width:100%;padding:14px;font-size:22px;text-align:center;border-radius:14px;border:2px solid var(--line);background:var(--well);color:var(--text);outline:none;font-weight:700;letter-spacing:1px}
 .clozebox.miss{animation:miss .45s}
 @keyframes miss{0%,100%{border-color:var(--carrot)}40%{border-color:#ffcf7d;transform:translateX(-3px)}70%{transform:translateX(3px)}}
-.clozebox{display:inline-block;padding:2px 8px;font-size:inherit;font-family:inherit;text-align:center;border-radius:8px;border:2px solid var(--carrot);background:#182642;color:var(--carrot);outline:none;font-weight:800;vertical-align:baseline}
+.clozebox{display:inline-block;padding:2px 8px;font-size:inherit;font-family:inherit;text-align:center;border-radius:8px;border:2px solid var(--carrot);background:var(--well);color:var(--carrot);outline:none;font-weight:800;vertical-align:baseline}
 .typebox:focus{border-color:var(--carrot)}
 .hint{margin-top:10px;font-size:15px;color:var(--dim);min-height:22px}
 .hint b{color:var(--carrot);letter-spacing:2px}
@@ -114,7 +125,7 @@ button{font-family:inherit;border:none;cursor:pointer;border-radius:14px}
 .wanted .wc{font-size:14px}
 .wanted .esc{font-size:12px;margin-top:5px;color:#a03c2c;font-weight:700}
 /* 词典面板 */
-.dict{background:#182642;border-radius:12px;margin-top:10px;text-align:left;font-size:14px;overflow:hidden}
+.dict{background:var(--well);border-radius:12px;margin-top:10px;text-align:left;font-size:14px;overflow:hidden}
 .dict-head{padding:10px 13px;color:var(--gold);font-weight:700;cursor:pointer;user-select:none}
 .dict-body{padding:0 13px 12px;line-height:1.6;color:#c9d6ee}
 .dict-body .sense{margin-top:6px}
@@ -145,7 +156,7 @@ h2.sec{font-size:17px;margin:18px 0 4px;color:var(--gold)}
 .wordrow .w{font-weight:800;font-size:16.5px;flex:1}
 .wordrow .m{font-size:13px;color:var(--dim);flex:1.4}
 .wordrow .box{font-size:11.5px;padding:2px 8px;border-radius:6px;background:#3d5585;flex:none}
-.wordrow .box.b3{background:#1f4d33;color:#7dedaa}
+.wordrow .box.b3{background:var(--ok-bg);color:#7dedaa}
 .wordrow .box.wt{background:#a03c2c;color:#ffd9cf}
 .tabs{display:flex;gap:8px;margin-top:12px}
 .tabs button{flex:1;padding:10px;background:var(--card);color:var(--dim);font-size:14px;font-weight:700}
@@ -209,6 +220,20 @@ const DAY=86400000;
 // 有实验支撑的是间隔效应+提取练习+间隔随保持期扩张(Cepeda 2008),数值本身无神圣性
 const GAPS=[1,2,4,7,15,30];
 const RANKS=[[0,"见习学员","🐇"],[15,"警校学员","🎓"],[40,"巡警","👮"],[80,"警探","🕵️"],[130,"警督","⭐"],[180,"警监","🌟"],[999,"局长","🏆"]];
+/* 主题:白天纸面(正极性阅读优势:浅底深字读得更准),19点后深色(暗环境不刺眼);手动切换后记住 */
+function applyTheme(){
+  if(!document.documentElement)return; // vm 回归环境无 documentElement
+  const pref=localStorage.getItem("zpd_theme");
+  const h=new Date().getHours();
+  const t=pref||((h>=19||h<7)?"dark":"paper");
+  if(t==="paper")document.documentElement.dataset.theme="paper";
+  else document.documentElement.removeAttribute("data-theme");
+}
+function toggleTheme(){
+  localStorage.setItem("zpd_theme",document.documentElement.dataset.theme==="paper"?"dark":"paper");
+  applyTheme();
+}
+applyTheme();
 let S=load();
 function load(){
   try{
@@ -449,7 +474,7 @@ function mediaRow(){
     inner=MOVIE_OK
       ?`<span class="tstamp" style="cursor:pointer" onclick="pickMedia()">📂 选电影视频文件,看画面</span>`
       :`<span class="tstamp" style="cursor:pointer" onclick="pickMedia()">📂 加载电影文件</span>
-        <div style="margin-top:4px;color:#5f7196">有《疯狂动物城》音频/视频文件就有原声和画面(找维护者要);没有也能用,朗读代替</div>`;
+        <div style="margin-top:4px;color:var(--mute)">有《疯狂动物城》音频/视频文件就有原声和画面(找维护者要);没有也能用,朗读代替</div>`;
     inner=`<div class="small" style="text-align:center;margin-top:16px">${inner}</div>`;
   }
   return `<div id="mediarow">${inner}</div>`;
@@ -638,10 +663,11 @@ function renderHome(){
     <span style="color:var(--gold)"> ${(S.av||0).toFixed(1)}s </span>
     <b style="cursor:pointer;color:var(--carrot)" onclick="avAdj(0.5)">延后0.5s ▶</b> ·
     <b style="cursor:pointer;color:var(--green)" onclick="playMovie('${rw[0].t}','${rw[0].w}')">▶ 试听测试句</b>
-    <div style="margin-top:4px;color:#5f7196">测试句应含 "${rw[0].w}"(本章开头的台词,英文见词卡)</div>
+    <div style="margin-top:4px;color:var(--mute)">测试句应含 "${rw[0].w}"(本章开头的台词,英文见词卡)</div>
   </div>`:""}
   ${mediaRow()}
-  <div class="small" style="text-align:center;margin-top:16px;color:#5f7196">
+  <div class="small" style="text-align:center;margin-top:16px;color:var(--mute)">
+    <span style="cursor:pointer" onclick="toggleTheme()">🌓 换肤</span> ·
     <span style="cursor:pointer" onclick="exportSave()">📦 导出存档</span> ·
     <span style="cursor:pointer" onclick="importSave()">📥 导入存档</span> ·
     <span style="cursor:pointer" onclick="resetAll()">🗑 重置存档</span>
@@ -689,7 +715,7 @@ function planPanel(){
     <div class="small" style="margin-top:4px">大脑在快忘掉的前一刻被提醒,记得最牢。逃犯档案的到期日,就是按你的遗忘曲线排的班:</div>
     <div class="plan">${cols}</div>
     <div class="stations">${st}</div>
-    <div class="small" style="margin-top:8px;color:#5f7196">每答对一次,这个词就跳到更远的一站(1→2→4→7→15→30天);答错则退站、半天内重考。今天偷懒,明天的柱子就会变高哦。</div>
+    <div class="small" style="margin-top:8px;color:var(--mute)">每答对一次,这个词就跳到更远的一站(1→2→4→7→15→30天);答错则退站、半天内重考。今天偷懒,明天的柱子就会变高哦。</div>
   </div>`;
 }
 /* ================= 学新词 ================= */
@@ -1016,7 +1042,7 @@ function renderIPA(id){
       <div class="small" style="margin:4px 2px 12px">一个符号=一个固定的音。点开听它,再到学过的词里找它</div>
       ${KINDS.map(([k,name])=>`<h2 class="sec">${name}</h2>
         <div class="ipagrid">${IPA_SOUNDS.filter(s=>s.kind===k).map(s=>`<button class="ipachip" onclick="go('ipa','${s.id}')">${s.sym}</button>`).join("")}</div>`).join("")}
-      <div class="small" style="text-align:center;margin-top:16px;color:#5f7196">纯音录音:Wikimedia Commons · CC BY-SA</div>`;
+      <div class="small" style="text-align:center;margin-top:16px;color:var(--mute)">纯音录音:Wikimedia Commons · CC BY-SA</div>`;
     return;
   }
   const s=IPA_SOUNDS.find(x=>x.id===id);if(!s){go("ipa");return;}
