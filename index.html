@@ -154,9 +154,9 @@ h2.sec{font-size:17px;margin:18px 0 4px;color:var(--gold)}
 <div id="app"></div>
 <div class="back"><div class="inner">
   <button id="nav-home" class="cur" onclick="go('home')">🏠 警局大厅</button>
+  <button id="nav-words" onclick="go('words')">📋 词汇档案</button>
   <button id="nav-ipa" onclick="go('ipa')">🔤 音标馆</button>
   <button id="nav-dojo" onclick="go('dojo')">🥋 拼读道场</button>
-  <button id="nav-words" onclick="go('words')">📋 词汇档案</button>
 </div></div>
 <script src="phonics.js"></script>
 <script src="ipa_data.js"></script>
@@ -610,16 +610,6 @@ function renderHome(){
     <div class="ico">🚨</div>
     <div class="tt"><b>抓捕逃犯</b><span>通缉榜 ${wanted} 个 · 到期复习 ${due} 个</span></div>
     <button class="go" onclick="go('review')" ${wanted===0&&due===0?"disabled":""}>${wanted===0&&due===0?"无案":"出警"}</button>
-  </div>
-  <div class="task">
-    <div class="ico">🔤</div>
-    <div class="tt"><b>音标馆</b><span>40 个美式音标 · 看懂拼读规律的钥匙</span></div>
-    <button class="go" onclick="go('ipa')">进入</button>
-  </div>
-  <div class="task ${S.dojo.done.length>=DOJO.length?"done":""}">
-    <div class="ico">🥋</div>
-    <div class="tt"><b>拼读道场</b><span>${S.dojo.done.length>=DOJO.length?"7 关全通!已练成拼读功夫":`按体系练拼读 · 已通 ${S.dojo.done.length}/${DOJO.length} 关 · 每天一关`}</span></div>
-    <button class="go" onclick="go('dojo')">${S.dojo.done.length===0?"入门":"进入"}</button>
   </div>
   <div class="task ${quizReady?(solved?"done":""):"locked"}">
     <div class="ico">🕵️</div>
