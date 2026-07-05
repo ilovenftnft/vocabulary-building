@@ -220,12 +220,10 @@ const DAY=86400000;
 // 有实验支撑的是间隔效应+提取练习+间隔随保持期扩张(Cepeda 2008),数值本身无神圣性
 const GAPS=[1,2,4,7,15,30];
 const RANKS=[[0,"见习学员","🐇"],[15,"警校学员","🎓"],[40,"巡警","👮"],[80,"警探","🕵️"],[130,"警督","⭐"],[180,"警监","🌟"],[999,"局长","🏆"]];
-/* 主题:白天纸面(正极性阅读优势:浅底深字读得更准),19点后深色(暗环境不刺眼);手动切换后记住 */
+/* 主题:全天默认纸面(2026-07-05 用户定,家里晚间开灯学习——深色只在暗环境占优);🌓 手动切深色并记住 */
 function applyTheme(){
   if(!document.documentElement)return; // vm 回归环境无 documentElement
-  const pref=localStorage.getItem("zpd_theme");
-  const h=new Date().getHours();
-  const t=pref||((h>=19||h<7)?"dark":"paper");
+  const t=localStorage.getItem("zpd_theme")||"paper";
   if(t==="paper")document.documentElement.dataset.theme="paper";
   else document.documentElement.removeAttribute("data-theme");
 }
