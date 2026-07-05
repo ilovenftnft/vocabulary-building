@@ -665,17 +665,24 @@ function renderLearn(){
   if(L.i>=L.list.length){markStudy();sessionReport("new");return;}
   const x=L.list[L.i];
   const dots=L.list.map((_,k)=>`<i class="${k<L.i?"on":""}"></i>`).join("");
-  if(L.phase===0){ // 声音先行:先听,想意思
+  if(L.phase===0){ // 声音先行:听音打词(和复习验收同一形式,2026-07-04 用户定;短语整句打字太重,保持先想再看)
+    LT=0;
+    const isChunk=x.type==="chunk";
     app.innerHTML=`<div class="stage"><div class="progress-mini">${dots}</div>
       <div class="soundwave">🔊</div>
-      <div class="small" style="margin-top:14px">听!这个${x.type==="chunk"?"短语":"单词"}是什么意思?<br>先自己想,想不出再看答案</div>
+      ${isChunk?`<div class="small" style="margin-top:14px">听!这个短语是什么意思?<br>先自己想,想不出再看答案</div>`:
+      `<div class="small" style="margin-top:14px">👂 听到什么,把它打出来!</div>
+      <input class="typebox" id="ltb" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="输入单词" onkeydown="if(event.key==='Enter')learnType()">
+      <div class="hint" id="lhint"></div>
+      <div class="feedback" id="lfb"></div>`}
       <button class="speak-btn" onclick="say('${x.w}',0.75)">🔁</button>
+      ${isChunk?"":`<button class="btn" onclick="learnType()">检查</button>`}
       <div style="display:flex;gap:10px">
-        ${L.i>0?`<button class="btn" style="flex:1" onclick="learnPrev()">← 上一个</button>`:""}
-        <button class="btn" style="flex:1" onclick="L.phase=1;renderLearn()">看答案</button>
+        ${L.i>0?`<button class="btn ${isChunk?"":"minor"}" style="flex:1" onclick="learnPrev()">← 上一个</button>`:""}
+        <button class="btn ${isChunk?"":"minor"}" style="flex:1" onclick="L.phase=1;renderLearn()">看答案</button>
       </div>
     </div>`;
-    setTimeout(()=>say(x.w,0.75),300);
+    setTimeout(()=>{say(x.w,0.75);const tb=document.getElementById("ltb");if(tb)tb.focus();},300);
   }else{
     app.innerHTML=`<div class="stage"><div class="progress-mini">${dots}</div>
       ${cardBody(x)}
@@ -715,6 +722,23 @@ function learnNext(){
   const c=card(x.w);
   if(!c.seen){c.seen=1;c.box=0;c.due=Date.now()+GAPS[0]*DAY;S.session.newW++;save();} // 回看过的卡不重复计数/重置复习时间
   L.i++;L.phase=0;renderLearn();
+}
+let LT=0; // 学习页听写的重试计数(每张卡归零)
+function learnType(){ // 听音打词:对了自动翻答案面;错了给音块递进提示(不计入复习调度,学习阶段只练不罚)
+  const x=L.list[L.i];
+  const v=(document.getElementById("ltb").value||"").trim().toLowerCase();
+  const fb=document.getElementById("lfb");
+  if(v===x.w.toLowerCase()){
+    fb.className="feedback ok";fb.textContent="✅ 对!";say(x.w,0.8);
+    setTimeout(()=>{L.phase=1;renderLearn();},750);
+  }else{
+    LT++;
+    const hint=document.getElementById("lhint");
+    if(LT===1){hint.innerHTML=`提示 · 音块:<b>${x.ch.map((c,i)=>i===0?ckSpan(c,0):"·".repeat(c.length)).join(" ")}</b>`;saySlow(x.w);}
+    else{hint.innerHTML=`提示 · 音块:<b>${chunksHtml(x," ")}</b>`;say(x.w,0.4);}
+    fb.className="feedback bad";fb.textContent="再听听,不行就看答案";
+    document.getElementById("ltb").select();
+  }
 }
 function learnPrev(){ // 回看上一张卡(直接落在答案面)
   if(L.i<1)return;
