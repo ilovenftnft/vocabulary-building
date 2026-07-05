@@ -156,6 +156,7 @@ h2.sec{font-size:17px;margin:18px 0 4px;color:var(--gold)}
 </div></div>
 <script src="phonics.js"></script>
 <script src="ipa_data.js"></script>
+<script src="../ipa_rachel_videos/zh_subs.js"></script><!-- 口型视频中文字幕,只存本机;线上 404 无害 -->
 <script src="dojo_ch1.js"></script>
 <script>
 /* ===== 章节加载器 =====
@@ -897,11 +898,21 @@ function toggleIpaVid(vid,btn){ // 老师口型视频:YouTube 原版(用户网�
     v.src="../ipa_rachel_videos/"+vid+".mp4";v.controls=true;
     v.style.cssText="width:100%;border-radius:12px;margin-top:10px";
     v.onerror=()=>{slot.innerHTML="";btn.textContent="🎬 看老师讲口型(Rachel's English)";window.open("https://www.youtube.com/watch?v="+vid);};
+    // 双语字幕:zh_subs.js 在本机才有;file:// 下 <track src> 会被 CORS 拦,须走 Blob
+    if(typeof IPA_SUBS!=="undefined"&&IPA_SUBS[vid]){
+      const fmt=t=>{const h=Math.floor(t/3600),m2=Math.floor(t%3600/60),s2=(t%60).toFixed(3);
+        return `${String(h).padStart(2,"0")}:${String(m2).padStart(2,"0")}:${s2.padStart(6,"0")}`;};
+      const vtt="WEBVTT\n\n"+IPA_SUBS[vid].map(c=>`${fmt(c.s)} --> ${fmt(c.e)}\n${c.en}\n${c.zh}`).join("\n\n");
+      const tr=document.createElement("track");
+      tr.kind="subtitles";tr.label="中英字幕";tr.srclang="zh";tr.default=true;
+      tr.src=URL.createObjectURL(new Blob([vtt],{type:"text/vtt"}));
+      v.appendChild(tr);
+    }
     slot.appendChild(v);v.play().catch(()=>{});
     btn.textContent="✕ 收起视频";
     return;
   }
-  slot.innerHTML=`<iframe src="https://www.youtube-nocookie.com/embed/${vid}?rel=0"
+  slot.innerHTML=`<iframe src="https://www.youtube-nocookie.com/embed/${vid}?rel=0&cc_load_policy=1&cc_lang_pref=zh-Hans&hl=zh-Hans"
     style="width:100%;aspect-ratio:16/9;border:0;border-radius:12px;margin-top:10px"
     allow="encrypted-media;fullscreen" allowfullscreen></iframe>`;
   btn.textContent="✕ 收起视频";
