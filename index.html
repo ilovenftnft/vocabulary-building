@@ -97,9 +97,6 @@ button{font-family:inherit;border:none;cursor:pointer;border-radius:14px}
 .speak-btn:active{background:var(--line)}
 .soundwave{font-size:64px;animation:pulse 1.2s infinite}
 @keyframes pulse{0%,100%{opacity:.75;transform:scale(1)}50%{opacity:1;transform:scale(1.12)}}
-.choice{display:block;width:100%;padding:14px;margin-top:10px;font-size:17px;font-weight:600;background:var(--card);color:var(--text);border:1px solid var(--line);text-align:left}
-.choice.ok{background:var(--ok-bg);border-color:var(--green)}
-.choice.bad{background:#54282e;border-color:var(--red)}
 .chunkzone{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px}
 .chunk{padding:10px 16px;font-size:19px;font-weight:700;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:12px}
 .chunk.used{opacity:.25;pointer-events:none}
@@ -108,7 +105,7 @@ button{font-family:inherit;border:none;cursor:pointer;border-radius:14px}
 /* 音块配色:同一个词里,不同音块不同颜色(定义在 .chunk/.slot 之后以覆盖其默认色) */
 .hue0{color:#ffb454}.hue1{color:#6fe3ff}.hue2{color:#7dedaa}.hue3{color:#ff9ecd}.hue4{color:#c9b8ff}.hue5{color:#ffe08a}
 .typebox{margin-top:16px;width:100%;padding:14px;font-size:22px;text-align:center;border-radius:14px;border:2px solid var(--line);background:var(--well);color:var(--text);outline:none;font-weight:700;letter-spacing:1px}
-.clozebox.miss{animation:miss .45s}
+.clozebox.miss,.typebox.miss{animation:miss .45s}
 @keyframes miss{0%,100%{border-color:var(--carrot)}40%{border-color:#ffcf7d;transform:translateX(-3px)}70%{transform:translateX(3px)}}
 .clozebox{display:inline-block;padding:2px 8px;font-size:inherit;font-family:inherit;text-align:center;border-radius:8px;border:2px solid var(--carrot);background:var(--well);color:var(--carrot);outline:none;font-weight:800;vertical-align:baseline}
 .typebox:focus{border-color:var(--carrot)}
@@ -124,6 +121,7 @@ button{font-family:inherit;border:none;cursor:pointer;border-radius:14px}
 .wanted .ww{font-size:26px;font-weight:800;margin:4px 0;color:#432c12}
 .wanted .wc{font-size:14px}
 .wanted .esc{font-size:12px;margin-top:5px;color:#a03c2c;font-weight:700}
+.wanted .leech{font-size:13px;margin-top:8px;padding-top:8px;border-top:1px dashed #b98a4e;color:#5a3d1e;text-align:left}
 /* 词典面板 */
 .dict{background:var(--well);border-radius:12px;margin-top:10px;text-align:left;font-size:14px;overflow:hidden}
 .dict-head{padding:10px 13px;color:var(--gold);font-weight:700;cursor:pointer;user-select:none}
@@ -153,7 +151,8 @@ h2.sec{font-size:17px;margin:18px 0 4px;color:var(--gold)}
 @media (min-width:1100px){ body{zoom:1.6} }
 @media (min-width:1500px){ body{zoom:1.9} }
 .wordrow{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card);border-radius:12px;margin-top:8px;border:1px solid var(--line)}
-.wordrow .w{font-weight:800;font-size:16.5px;flex:1}
+.wordrow .w{font-weight:800;font-size:16.5px;flex:none;min-width:96px}
+.wordrow .ck{font-size:13.5px;font-weight:700;flex:1}
 .wordrow .m{font-size:13px;color:var(--dim);flex:1.4}
 .wordrow .box{font-size:11.5px;padding:2px 8px;border-radius:6px;background:#3d5585;flex:none}
 .wordrow .box.b3{background:var(--ok-bg);color:#7dedaa}
@@ -219,6 +218,7 @@ const DAY=86400000;
 // 注意:这不是"艾宾浩斯计划"——艾宾浩斯只测过遗忘速度,没给过复习时间表;
 // 有实验支撑的是间隔效应+提取练习+间隔随保持期扩张(Cepeda 2008),数值本身无神圣性
 const GAPS=[1,2,4,7,15,30];
+const LEECH=4; // 逃脱≥4次=惯犯(Anki leech 惯例):调度治不了编码失败,提示去道场重练音块
 const RANKS=[[0,"见习学员","🐇"],[15,"警校学员","🎓"],[40,"巡警","👮"],[80,"警探","🕵️"],[130,"警督","⭐"],[180,"警监","🌟"],[999,"局长","🏆"]];
 /* 主题:固定纸面(2026-07-05 用户定,切换开关已删;深色变量集保留,要恢复时加回 toggleTheme 入口即可) */
 if(document.documentElement)document.documentElement.dataset.theme="paper";
@@ -237,6 +237,10 @@ function load(){
     s.gold=s.gold||{}; // 第二轮(课标外词)金警徽
     if(!s.avReset2){s.av=0;s.avReset2=true;} // 2026-07-03 区间换成精确对齐,旧的手调偏移一次性归零
     if(s.caseSolved&&!s.badges[1])s.badges[1]=true; // 旧档的第1章警徽
+    if(!s.arrestMig){ // 2026-07-23 抓捕改跨天排班:旧档的 caught 是当天连刷的产物(无间隔=无效抓捕),清零重数;潜逃期最长收敛到明天,防止第一抓后被 GAPS 排到几天后"失踪"
+      Object.values(s.cards).forEach(c=>{if(c.wanted){c.caught=0;if(c.due>Date.now()+DAY)c.due=Date.now()+DAY;}});
+      s.arrestMig=true;
+    }
     return s;}}catch(e){}
   return {cards:{},day:today(),streak:0,lastStudy:"",shields:2,firstDone:false,badges:{},gold:{},
           dojo:{done:[],free:false},session:{newW:0,caught:0,esc:0}};
@@ -250,6 +254,10 @@ function card(w){ if(!S.cards[w]) S.cards[w]={box:0,due:0,seen:0,wrong:0,wanted:
 function learnedCount(){return Object.values(S.cards).filter(c=>c.seen>0).length;}
 function masteredCount(){return Object.values(S.cards).filter(c=>c.box>=3).length;}
 function wantedList(){return WORDS.filter(x=>card(x.w).wanted);}
+// 通缉犯也按日历天排班:潜逃中(due 在明天)的今天抓不到。答案刚亮过就重抓是复读不是提取,
+// 隔夜遗忘后的成功提取才有巩固效果(依据见 hit() 注释);修复前 wantedList 不看 due,可当场连刷两次归案
+function catchable(c){const e=new Date();e.setHours(23,59,59,999);return c.wanted&&c.due<=e.getTime();}
+function catchableList(){return WORDS.filter(x=>catchable(card(x.w)));}
 // 到期按"日历天"算(与记忆档案室同一把尺,Anki 一族惯例):到期日是今天的,当天任何时候都可复习
 // (2026-07-04 用户发现图表"今天3个"和出警"0个"对不上——图按天、出警按秒,两把尺子已统一按天)
 function dueList(){const e=new Date();e.setHours(23,59,59,999);const t=e.getTime();
@@ -599,7 +607,8 @@ function renderHome(){
   const r=rankOf(gLearned), nr=nextRank(gLearned);
   const G=round2(), rw=roundWords(G?1:0); // 本轮考核词集:一轮=课标词,二轮=课标外
   const learned=rw.filter(x=>card(x.w).seen>0).length, total=rw.length;
-  const due=dueList().length, wanted=wantedList().length, news=newList().length;
+  const due=dueList().filter(x=>!card(x.w).wanted).length, wanted=wantedList().length,
+        catchN=catchableList().length, act=catchN+due, news=newList().length; // 出警只看"今天可抓+到期",潜逃中的不算活
   const quizReady=learned>=Math.floor(total*0.8);
   const solved=G?goldCh():solvedCh();
   const moviePct=Math.round(learned/total*100);
@@ -628,10 +637,10 @@ function renderHome(){
     <div class="tt"><b>认识新市民</b><span>还有 ${news} 个新词等着你 · 每次 10 个</span></div>
     <button class="go" onclick="go('learn')" ${news===0?"disabled":""}>${news===0?"完成":"开始"}</button>
   </div>
-  <div class="task ${wanted===0&&due===0?"done":""}">
+  <div class="task ${act===0?"done":""}">
     <div class="ico">🚨</div>
-    <div class="tt"><b>抓捕逃犯</b><span>通缉榜 ${wanted} 个 · 到期复习 ${due} 个</span></div>
-    <button class="go" onclick="go('review')" ${wanted===0&&due===0?"disabled":""}>${wanted===0&&due===0?"无案":"出警"}</button>
+    <div class="tt"><b>抓捕逃犯</b><span>今天可抓 ${catchN} 个 · 到期复习 ${due} 个</span></div>
+    <button class="go" onclick="go('review')" ${act===0?"disabled":""}>${act>0?"出警":(wanted>0?"潜逃中":"无案")}</button>
   </div>
   <div class="task ${quizReady?(solved?"done":""):"locked"}">
     <div class="ico">🕵️</div>
@@ -639,8 +648,12 @@ function renderHome(){
     <button class="go" onclick="go('quiz')" ${quizReady?"":"disabled"}>${solved?"重玩":"破案"}</button>
   </div>
   ${planPanel()}
-  ${wanted>0?`<h2 class="sec">🚨 通缉榜(答错的词在这里等你抓)</h2>`+wantedList().slice(0,3).map(x=>
-    `<div class="wanted"><h3>W A N T E D</h3><div class="ww">${x.w}</div><div class="wc">${x.cn}</div><div class="esc">已逃脱 ${card(x.w).wrong} 次 · 连抓 ${card(x.w).caught}/2 次归案</div></div>`).join("")+
+  ${wanted>0?`<h2 class="sec">🚨 通缉榜(答错的词在这里等你抓)</h2>`+wantedList().slice(0,3).map(x=>{
+    const c=card(x.w);
+    return `<div class="wanted"><h3>W A N T E D</h3><div class="ww">${x.w}</div><div class="wc">${x.cn}</div>
+      <div class="esc">已逃脱 ${c.wrong} 次 · 隔天连抓 ${c.caught}/2 次归案 · ${catchable(c)?"今天现身,出警可抓!":"潜逃中,明天现身"}</div>
+      ${c.wrong>=LEECH?`<div class="leech">⚠️ 惯犯!光抓不住它——先去<span style="cursor:pointer;text-decoration:underline" onclick="go('dojo')">拼读道场</span>练熟音块:${chunksHtml(x)} <span style="cursor:pointer" onclick="saySlow('${x.w.replace(/'/g,"\\'")}')">🔊慢读</span></div>`:""}</div>`;
+  }).join("")+
     (wanted>3?`<div class="small" style="text-align:center;margin-top:8px">…还有 ${wanted-3} 名逃犯</div>`:""):""}
   ${solvedCh()?`<div class="panel" style="text-align:center;margin-top:14px">${goldCh()?"🥇":"🎖️"} <b>${CHMETA.title.split(" ")[0]}${goldCh()?"金警徽":"警徽"}</b> 已获得!<div class="small">裸听挑战:重放电影 ${CHMETA.from}-${CHMETA.to},看你能听懂多少!</div>
     <div style="margin-top:8px"><span class="tstamp" style="cursor:pointer" onclick="playChapter()">🔊 裸听本章(再点一次停)</span>
@@ -702,7 +715,7 @@ function planPanel(){
     <div class="small" style="margin-top:4px">大脑在快忘掉的前一刻被提醒,记得最牢。逃犯档案的到期日,就是按你的遗忘曲线排的班:</div>
     <div class="plan">${cols}</div>
     <div class="stations">${st}</div>
-    <div class="small" style="margin-top:8px;color:var(--mute)">每答对一次,这个词就跳到更远的一站(1→2→4→7→15→30天);答错则退站、半天内重考。今天偷懒,明天的柱子就会变高哦。</div>
+    <div class="small" style="margin-top:8px;color:var(--mute)">每答对一次,这个词就跳到更远的一站(1→2→4→7→15→30天);答错则退站、进通缉榜,明天蹲点再抓。今天偷懒,明天的柱子就会变高哦。</div>
   </div>`;
 }
 /* ================= 学新词 ================= */
@@ -771,11 +784,15 @@ function cardBody(x){
 function showWord(w){
   const x=WORDS.find(y=>y.w===w); if(!x){go("words");return;}
   window.scrollTo(0,0);stopMovie();
+  const AL=archiveList(), idx=AL.findIndex(y=>y.w===w);
+  const prev=idx>0?AL[idx-1].w:null, next=idx>=0&&idx<AL.length-1?AL[idx+1].w:null;
+  const nav=(w2,label,dis)=>`<button class="btn minor btn-sm" style="flex:1${dis?";opacity:.35;pointer-events:none":""}" ${dis?"":`onclick="showWord('${w2.replace(/'/g,"\\'")}')"`}>${label}</button>`;
   app.innerHTML=`<div class="stage">
     ${cardBody(x)}
     <div style="display:flex;gap:8px;margin-top:14px">
-      <button class="btn ghost btn-sm" style="flex:1" onclick="say('${x.en.replace(/'/g,"\\'")}',0.8)">🎤 跟读台词</button>
-      <button class="btn minor btn-sm" style="flex:1" onclick="go('words')">← 返回词汇档案</button>
+      <button class="btn ghost btn-sm" style="flex:1.2" onclick="say('${x.en.replace(/'/g,"\\'")}',0.8)">🎤 跟读台词</button>
+      ${nav(prev,"← 上一个",!prev)}
+      ${nav(next,"下一个 →",!next)}
     </div>
   </div>`;
   say(x.w,0.75);
@@ -813,58 +830,76 @@ function learnPrev(){ // 回到上一张卡的听写面,可重新自测(2026-07-
   if(L.i<1)return;
   stopMovie();L.i--;L.phase=0;renderLearn();
 }
-/* ================= 复习 / 抓捕(拼写三台阶) ================= */
-let R={list:[],i:0,tryn:0};
+/* ================= 复习 / 抓捕(四站题型) ================= */
+let R={list:[],i:0,tryn:0,lad:1};
 function startReview(){
   const now=Date.now();
-  const list=[...wantedList(),...dueList().filter(x=>!card(x.w).wanted)];
+  const list=[...catchableList(),...dueList().filter(x=>!card(x.w).wanted)]; // 潜逃中的通缉犯不进队列,反复点出警刷不出它
   const uniq=[...new Map(list.map(x=>[x.w,x])).values()];
   if(!uniq.length){go("home");return;}
   R={list:uniq.slice(0,15).sort(()=>Math.random()-.5),i:0,tryn:0};
   S.session={newW:0,caught:0,esc:0};
   renderReview();
 }
-function ladderOf(x){ // 0选择 1音块拼装 2全拼
-  const b=card(x.w).box;
-  if(x.type==="chunk")return b<2?0:1;
-  return b<=0?0:(b<=2?1:2);
+/* 题型阶梯(2026-07-20 与家长定,取代旧"四选一→拼装→全拼"三台阶):
+   1=音块拼装+干扰块 2=全拼听写 3=原声完形(播原句不播孤立词) 4=无声回忆(只给中文,不给声音)
+   依据:提取式练习中自由产出优于多选辨认(Kang, McDermott & Roediger 2007;Rowland 2014 元分析),故删四选一;
+   干扰块/撤声音是把"合意困难"(Bjork)落到题型的设计推理,无逐题型专门实验,不冒充有 */
+function ladderOf(x){
+  const c=card(x.w), b=c.box;
+  const norm=x.type==="chunk"?(b<2?1:3):(b<=1?1:b===2?2:b<=4?3:4); // 短语:拼装后直接原声完形
+  // 通缉犯第二抓:不低于全拼级(短语没有孤立全拼,用原声完形),但也不给高站词降难——取两者较难
+  // (修复前无条件返回全拼级,box5 的词被通缉后反而从无声回忆降到全拼)
+  if(c.wanted&&c.caught>=1)return Math.max(x.type==="chunk"?3:2,norm);
+  return norm;
 }
+function clozeRe(x){return new RegExp("\\b("+x.w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"[a-z]*)\\b","i");}
 function renderReview(){
   if(R.i>=R.list.length){markStudy();sessionReport("review");return;}
+  stopMovie(); // 上一张卡的原声别串进这张
   const x=R.list[R.i]; R.tryn=0;
   const isWanted=card(x.w).wanted;
   const dots=R.list.map((_,k)=>`<i class="${k<R.i?"on":""}"></i>`).join("");
-  const head=isWanted?`<div class="small" style="color:#ff9f3c">🚨 通缉犯出现!连抓2次才归案(${card(x.w).caught}/2)</div>`:`<div class="small">📋 例行复习</div>`;
-  const lad=ladderOf(x);
-  let body="";
-  if(lad===0){ // 台阶1:听音+看中文 → 四选一
-    const opts=[x.w,...shuffle(WORDS.filter(y=>y.w!==x.w&&(y.type==="chunk")===(x.type==="chunk")).map(y=>y.w)).slice(0,3)];
-    body=`<div class="cn-mean">${x.cn}</div><div class="small" style="margin-top:6px">哪个是它?👂 <span style="cursor:pointer" onclick="say('${x.w}',0.75)">🔊 再听一遍</span></div>
-      ${shuffle(opts).map(o=>`<button class="choice" onclick="pickChoice(this,'${o.replace(/'/g,"\\'")}')">${o}</button>`).join("")}`;
-    setTimeout(()=>say(x.w,0.75),300);
-  }else if(lad===1){ // 台阶2:音块拼装
-    R.pool=shuffle([...x.ch]); R.picked=[];
-    body=`<div class="cn-mean">${x.cn}</div><div class="small" style="margin-top:6px">👂 <span style="cursor:pointer" onclick="say('${x.w}',0.7)">🔊</span> 按声音顺序点音块,拼出它</div>
-      <div class="slotline" id="slots"></div>
-      <div class="chunkzone" id="pool">${R.pool.map((c,i)=>`<button class="chunk hue${x.ch.indexOf(c)%6}" id="ck${i}" onclick="pickChunk(${i})">${c}</button>`).join("")}</div>
-      <div class="feedback" id="fb"></div>`;
-    setTimeout(()=>say(x.w,0.7),300);
-  }else{ // 台阶3:全拼(听写)
-    body=`<div class="cn-mean">${x.cn}</div><div class="small" style="margin-top:6px">👂 <span style="cursor:pointer" onclick="say('${x.w}',0.7)">🔊 听音</span> 直接把它打出来!</div>
-      <input class="typebox" id="tb" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="输入单词" onkeydown="if(event.key==='Enter')checkType()">
-      <div class="hint" id="hint"></div>
+  const head=isWanted?`<div class="small" style="color:#ff9f3c">🚨 通缉犯出现!隔天连抓 2 次才归案(${card(x.w).caught}/2)</div>`:`<div class="small">📋 例行复习</div>`;
+  const lad=R.lad=ladderOf(x);
+  const typebox=`<input class="typebox" id="tb" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="输入单词" onkeydown="if(event.key==='Enter')checkType()">`;
+  const tail=`<div class="hint" id="hint"></div>
       <button class="btn ghost btn-sm" style="margin-top:12px" onclick="checkType()">抓捕 ⏎</button>
       <div class="feedback" id="fb"></div>`;
+  let body="";
+  if(lad===1){ // 站1:音块拼装+干扰块(混入别的词的音块,拼不了排除法)
+    const noise=shuffle([...new Set(WORDS.filter(y=>y.w!==x.w&&(y.type==="chunk")===(x.type==="chunk")).flatMap(y=>y.ch))].filter(c=>!x.ch.includes(c))).slice(0,3);
+    R.pool=shuffle([...x.ch,...noise]); R.picked=[];
+    body=`<div class="cn-mean">${x.cn}</div><div class="small" style="margin-top:6px">👂 <span style="cursor:pointer" onclick="say('${x.w.replace(/'/g,"\\'")}',0.7)">🔊</span> 按声音顺序点音块拼出它——混进了别人的音块,小心!</div>
+      <div class="slotline" id="slots"></div>
+      <div class="chunkzone" id="pool">${R.pool.map((c,i)=>`<button class="chunk hue${i%6}" id="ck${i}" onclick="pickChunk(${i})">${c}</button>`).join("")}</div>
+      <div class="feedback" id="fb"></div>`;
+    setTimeout(()=>say(x.w,0.7),300);
+  }else if(lad===2){ // 站2:全拼听写(孤立词)
+    body=`<div class="cn-mean">${x.cn}</div><div class="small" style="margin-top:6px">👂 <span style="cursor:pointer" onclick="say('${x.w.replace(/'/g,"\\'")}',0.7)">🔊 听音</span> 直接把它打出来!</div>
+      ${typebox}${tail}`;
     setTimeout(()=>{say(x.w,0.7);const tb=document.getElementById("tb");if(tb)tb.focus();},300);
+  }else if(lad===3){ // 站3:原声完形——播电影原句(不播孤立词),整句摆出、目标词空成内嵌输入框
+    const m=x.en.match(clozeRe(x));
+    const inp=n=>`<input class="clozebox" id="tb" size="${Math.max(4,n)}" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')checkType()">`;
+    const cloze=m?esc(x.en).replace(clozeRe(x),inp(m[1].length)):inp(x.w.length); // 变形留同长度的空;例句异常退回裸输入框
+    body=`<div class="small" style="margin-top:6px">👂 听原声,把缺的词填进句子 <span style="cursor:pointer" onmousedown="event.preventDefault()" onclick="playMovie('${x.t}','${x.w.replace(/'/g,"\\'")}')">🔊 再听原声</span></div>
+      <div class="linebox" style="margin-top:12px;text-align:left"><div class="en" style="font-size:21px;line-height:1.7">${cloze}</div></div>
+      ${tail}`;
+    setTimeout(()=>{playMovie(x.t,x.w);const tb=document.getElementById("tb");if(tb)tb.focus();},300);
+  }else{ // 站4:无声回忆——不给任何声音,纯"意思→拼形"(听力拐杖拿掉,针对听强写弱)
+    body=`<div class="cn-mean">${x.cn}</div><div class="small" style="margin-top:6px">🤫 这次没有声音——回忆它,直接打出来!</div>
+      <div class="linebox" style="margin-top:12px;text-align:left"><div class="zh">${x.zh}</div></div>
+      ${typebox}${tail}`;
+    setTimeout(()=>{const tb=document.getElementById("tb");if(tb)tb.focus();},300);
   }
   app.innerHTML=`<div class="stage"><div class="progress-mini">${dots}</div>${head}${body}</div>`;
 }
 function shuffle(a){return a.sort(()=>Math.random()-.5);}
-function pickChoice(el,o){
-  const x=R.list[R.i];
-  if(o===x.w){el.classList.add("ok");say(x.w,0.8);setTimeout(()=>hit(true),650);}
-  else{el.classList.add("bad");R.tryn++;setTimeout(()=>hit(false),650);}
-}
+// 答对时的反馈按抓捕弧线说清下一步,孩子在动作发生的当口理解"隔天连抓"机制
+function okMsg(x){const c=card(x.w);if(!c.wanted)return "✅ 归案!";
+  if(R.tryn>0)return "✅ 对了!但用了提示,明天再抓";
+  return c.caught>=1?"✅ 第二抓成功,归案!":"✅ 第一抓成功!明天再抓到就归案";}
 function pickChunk(i){
   const x=R.list[R.i];
   const c=R.pool[i];
@@ -872,45 +907,66 @@ function pickChunk(i){
   if(c===want){
     R.picked.push(c);document.getElementById("ck"+i).classList.add("used");
     document.getElementById("slots").innerHTML=R.picked.map((p,k)=>`<span class="slot hue${k%6}">${p}</span>`).join("");
-    if(R.picked.length===x.ch.length){say(x.w,0.8);document.getElementById("fb").className="feedback ok";document.getElementById("fb").textContent="✅ 拼对了!";setTimeout(()=>hit(true),750);}
+    if(R.picked.length===x.ch.length){say(x.w,0.8);document.getElementById("fb").className="feedback ok";document.getElementById("fb").textContent=okMsg(x);setTimeout(()=>hit(true),750);}
   }else{
     R.tryn++;
-    const fb=document.getElementById("fb");fb.className="feedback bad";fb.textContent=`❌ 下一块是:${want}(听慢读)`;saySlow(x.w);
+    const fb=document.getElementById("fb");fb.className="feedback bad";
+    fb.textContent=R.tryn===1?"❌ 不是这块,再听一遍":`❌ 下一块是:${want}(听慢读)`; // 第一错不报答案,干扰块才有牙齿
+    saySlow(x.w);
     if(R.tryn>=3){setTimeout(()=>hit(false),600);}
   }
 }
 function checkType(){
-  const x=R.list[R.i];
+  const x=R.list[R.i], lad=R.lad;
   const v=(document.getElementById("tb").value||"").trim().toLowerCase();
-  if(v===x.w.toLowerCase()){
-    document.getElementById("fb").className="feedback ok";document.getElementById("fb").textContent="✅ 归案!";say(x.w,0.8);
+  const ok=[x.w.toLowerCase()];
+  if(lad===3){const m=x.en.match(clozeRe(x));if(m)ok.push(m[1].toLowerCase());} // 原声完形:句中变形也算对
+  if(ok.includes(v)){
+    document.getElementById("fb").className="feedback ok";document.getElementById("fb").textContent=okMsg(x);say(x.w,0.8);
     setTimeout(()=>hit(true),750);
   }else{
     R.tryn++;
     const hint=document.getElementById("hint");
-    if(R.tryn===1){hint.innerHTML=`提示 · 音块:<b>${x.ch.map((c,i)=>i===0?ckSpan(c,0):"·".repeat(c.length)).join(" ")}</b>`;saySlow(x.w);}
+    // 提示第一级按题型补上缺的那条线索:原声完形给词义、无声回忆给读音、全拼听写给首音块;第二级都给全部音块
+    if(R.tryn===1){
+      if(lad===3)hint.innerHTML=`提示:<b>${x.cn}</b>`;
+      else if(lad===4)hint.innerHTML="提示:听它的读音 👂";
+      else hint.innerHTML=`提示 · 音块:<b>${x.ch.map((c,i)=>i===0?ckSpan(c,0):"·".repeat(c.length)).join(" ")}</b>`;
+      saySlow(x.w);
+    }
     else if(R.tryn===2){hint.innerHTML=`提示 · 音块:<b>${chunksHtml(x," ")}</b>`;say(x.w,0.4);}
     else{hit(false);return;}
-    const fb=document.getElementById("fb");fb.className="feedback bad";fb.textContent="还差一点,听提示再试!";
-    document.getElementById("tb").select();
+    const tb=document.getElementById("tb"); // 没对不用文字通报:边框闪一下+提示出现即信号(与学新词页同一语言);光标停在末尾接着补
+    tb.classList.remove("miss");void tb.offsetWidth;tb.classList.add("miss");
+    tb.focus();tb.setSelectionRange(tb.value.length,tb.value.length);
   }
 }
+/* 通缉犯走独立"再学轨道"(2026-07-23 定,堵住"当天连刷两次归案"漏洞):
+   错词经 [+1天,+1天] 两步跨天提取才回 GAPS 主轨道——Anki relearning steps 惯例,非逐参数实验。
+   依据:答案刚亮过就重答是复读不是提取,间隔后的成功提取才有巩固效果(间隔提取,Cepeda 2008;
+   Rowland 2014 元分析);步长 1 天=跨睡眠+与日历天口径一致。通缉期间 box 冻结,归案那一抓才升站;
+   再错继续降站。23:55 错、0:01 抓的午夜缝隙已知且接受(堵它要破坏"统一按天"的尺,家长管睡觉) */
 function hit(ok){
   const x=R.list[R.i];const c=card(x.w);c.seen++;
   if(ok&&R.tryn===0){
-    if(c.wanted){c.caught++;if(c.caught>=2){c.wanted=false;c.caught=0;}}
-    c.box=Math.min(c.box+1,GAPS.length-1);
-    c.due=Date.now()+GAPS[c.box]*DAY;
+    if(c.wanted){
+      c.caught++;
+      if(c.caught>=2){c.wanted=false;c.caught=0;c.box=Math.min(c.box+1,GAPS.length-1);c.due=Date.now()+GAPS[c.box]*DAY;} // 归案:回主轨道
+      else c.due=Date.now()+1*DAY; // 第一抓:明天第二抓
+    }else{
+      c.box=Math.min(c.box+1,GAPS.length-1);
+      c.due=Date.now()+GAPS[c.box]*DAY;
+    }
     S.session.caught++;
-  }else if(ok){ // 提示后答对:不升级,明天再见
+  }else if(ok){ // 提示后答对:不升级,通缉进度清零,明天再见
     c.due=Date.now()+1*DAY; if(c.wanted)c.caught=0;
     S.session.caught++;
   }else{
     c.wrong++;c.wanted=true;c.caught=0;c.box=Math.max(0,c.box-1);
-    c.due=Date.now()+0.5*DAY;
+    c.due=Date.now()+1*DAY; // 潜逃一天:答案马上就亮出来,今天再抓测不到记忆
     S.session.esc++;
     // 逃跑动画页
-    app.innerHTML=`<div class="stage"><div class="wanted"><h3>W A N T E D</h3><div class="ww">${x.w}</div><div class="wc">${x.ipa?"/"+x.ipa+"/ ":""}${x.cn}</div><div class="esc">💨 逃犯逃跑了!它进了通缉榜,改天再抓</div></div>
+    app.innerHTML=`<div class="stage"><div class="wanted"><h3>W A N T E D</h3><div class="ww">${x.w}</div><div class="wc">${x.ipa?"/"+x.ipa+"/ ":""}${x.cn}</div><div class="esc">💨 逃犯逃跑了!它进了通缉榜,明天再抓</div></div>
       ${lineBox(x)}${x.type!=="chunk"?`<div class="small" style="margin-top:8px">音块:${chunksHtml(x)} <span style="cursor:pointer" onclick="saySlow('${x.w.replace(/'/g,"\\'")}')">🔊慢读</span></div>`:""}
       <div style="display:flex;gap:8px;margin-top:14px">
         <button class="btn ghost btn-sm" style="flex:1" onclick="say('${x.w}',0.7)">🔊 再听一遍</button>
@@ -970,7 +1026,8 @@ function checkQuiz(){
   const ok=v===base||(v.startsWith(base)&&v.length-base.length<=3&&x.en.toLowerCase().includes(v));
   const fb=document.getElementById("fb");
   if(ok){Q.score++;fb.className="feedback ok";fb.textContent="✅ 线索破译!";say(x.w,0.8);}
-  else{fb.className="feedback bad";fb.textContent=`❌ 正确答案:${x.w}`;const c=card(x.w);c.wanted=true;c.caught=0;save();}
+  else{fb.className="feedback bad";fb.textContent=`❌ 正确答案:${x.w}`; // 破案答错与复习答错同口径:降站+进通缉轨道明天现身(修复前不设 due,词会等原 GAPS 到期才现身)
+    const c=card(x.w);c.wrong++;c.wanted=true;c.caught=0;c.box=Math.max(0,c.box-1);c.due=Date.now()+1*DAY;save();}
   setTimeout(()=>{Q.i++;renderQuiz();},900);
 }
 /* ================= 音标馆 ================= */
@@ -1167,11 +1224,15 @@ function sessionReport(kind){
 }
 /* ================= 词汇档案 ================= */
 let W_TAB="all";
+function archiveList(){ // 当前标签页下档案里显示的词序(showWord 的上一个/下一个也走这个序)
+  const V=visWords(), VSET=new Set(V.map(x=>x.w));
+  return W_TAB==="all"?V:(W_TAB==="wanted"?wantedList().filter(x=>VSET.has(x.w)):V.filter(x=>card(x.w).box>=3));
+}
 function renderWords(tab){
   if(tab)W_TAB=tab;
-  const V=visWords(), VSET=new Set(V.map(x=>x.w)); // 档案只显示当前轮已解锁的词
+  const V=visWords(); // 档案只显示当前轮已解锁的词
   const learned=V.filter(x=>card(x.w).seen>0);
-  let list=W_TAB==="all"?V:(W_TAB==="wanted"?wantedList().filter(x=>VSET.has(x.w)):V.filter(x=>card(x.w).box>=3));
+  let list=archiveList();
   app.innerHTML=`
   <div class="topbar"><div class="brand">📋 词汇档案 · 第${CNNUM[CH_NO]}章</div><div class="streak">${learned.length}/${V.length}</div></div>
   <div class="tabs">
@@ -1181,8 +1242,8 @@ function renderWords(tab){
   </div>
   ${list.map(x=>{
     const c=S.cards[x.w];
-    const st=!c||c.seen===0?'<span class="box">未学</span>':(c.wanted?'<span class="box wt">通缉</span>':(c.box>=3?`<span class="box b3">已归档·第${c.box+1}站</span>`:`<span class="box">第${c.box+1}站/6</span>`));
-    return `<div class="wordrow"><span style="cursor:pointer" onclick="say('${x.w.replace(/'/g,"\\'")}',0.75)">🔊</span><span class="w" style="cursor:pointer" onclick="showWord('${x.w.replace(/'/g,"\\'")}')">${x.w} <span style="color:var(--dim);font-weight:400;font-size:12px">▸</span></span><span class="m">${x.cn}</span>${st}</div>`;
+    const st=!c||c.seen===0?'<span class="box">未学</span>':(c.wanted?`<span class="box wt">${c.wrong>=LEECH?"通缉·惯犯":"通缉"}</span>`:(c.box>=3?`<span class="box b3">已归档·第${c.box+1}站</span>`:`<span class="box">第${c.box+1}站/6</span>`));
+    return `<div class="wordrow"><span style="cursor:pointer" onclick="say('${x.w.replace(/'/g,"\\'")}',0.75)">🔊</span><span class="w" style="cursor:pointer" onclick="showWord('${x.w.replace(/'/g,"\\'")}')">${x.w} <span style="color:var(--dim);font-weight:400;font-size:12px">▸</span></span><span class="ck">${chunksHtml(x)}</span><span class="m">${x.cn}</span>${st}</div>`;
   }).join("")||'<div class="small" style="margin-top:20px;text-align:center">这里还空着</div>'}`;
 }
 /* 启动(支持 ?page=learn|review|quiz|words 直达;?demo=1 造演示数据;调试用) */
@@ -1191,8 +1252,9 @@ if(QP.has("demo")){
   // 前20个到期(供 review 调试),后60个散布在未来一周(供档案室看图)
   WORDS.slice(0,20).forEach((x,i)=>{const c=card(x.w);c.seen=1;c.box=i%4;c.due=Date.now()-1000;});
   WORDS.slice(20,80).forEach((x,i)=>{const c=card(x.w);c.seen=1;c.box=i%6;c.due=Date.now()+((i*13)%8)*DAY+DAY/2;});
-  const w1=card(WORDS[3].w);w1.wanted=true;w1.wrong=2;
-  const w2=card(WORDS[7].w);w2.wanted=true;w2.wrong=1;
+  const w1=card(WORDS[3].w);w1.wanted=true;w1.wrong=2; // due=0 → 今天可抓
+  const w2=card(WORDS[7].w);w2.wanted=true;w2.wrong=1;w2.due=Date.now()+DAY; // 潜逃中,明天现身
+  const w3=card(WORDS[11].w);w3.wanted=true;w3.wrong=5;w3.caught=1; // 惯犯 + 已抓一次
   S.streak=3;
 }
 if(QP.get("page")==="learn"&&QP.has("reveal")){
